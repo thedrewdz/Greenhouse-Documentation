@@ -14,18 +14,17 @@ For canonical guidance, use:
 
 - Date: 2026-06-02
 - Owner: Copilot session
-- Goal: Consolidate the docs hub into neutral canonical entry files and finalize onboarding flow language.
+- Goal: Clarify Edge Unit runtime configuration persistence expectations for WiFi and MQTT onboarding settings.
 - Completed:
-	- Consolidated AGENTS/CONTEXT into base files and removed consumer-specific variants.
-	- Consolidated README files into a single canonical README.md.
-	- Standardized terminology to Main Unit and Edge Unit across docs.
-	- Added and aligned Plan Interrogation Method language in documentation skills.
-	- Updated Edge Unit onboarding journey with BLE role clarity, timeout flow, restart behavior, and stop-scan-on-navigate-away behavior.
-	- Ensured README.md is the single discoverability index for all docs except agent-handoff.md.
+	- Updated onboarding specs to require persisting accepted provisioning values in NVS-backed storage.
+	- Added explicit persistence requirements for wifi_ssid, wifi_password, mqtt_broker_uri, and optional heartbeat_interval_ms.
+	- Added acceptance criteria that persisted config is loaded on boot and can be overwritten by newer valid payloads.
+	- Updated heartbeat skeleton spec to allow runtime configuration sourced from build defaults and or NVS.
+	- Added explicit heartbeat-spec configuration persistence requirements including update-at-any-time allowance and write-failure fallback behavior.
+	- Confirmed no new standalone NVS skill is needed for now; keep guidance embedded in existing docs and skills.
 - Blockers: none.
 - Next actions:
-	- Keep this file updated at end of major maintainer sessions.
-	- Continue using README.md as the single entry point for consuming agents.
+	- If recurring firmware tasks require repeatable NVS migration and recovery guidance, add a short Configuration Persistence subsection to skills/esp-idf-firmware-practices.md.
 
 ## Template
 

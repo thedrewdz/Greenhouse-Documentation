@@ -16,7 +16,8 @@ This spec does not cover slot discovery, per-slot state reporting, command handl
 ## Preconditions and Assumptions
 
 - Node runs as an ESP32 Edge firmware unit.
-- MQTT broker URI, WiFi SSID, and WiFi password are configured in firmware build configuration.
+- MQTT broker URI, WiFi SSID, and WiFi password are available from runtime configuration.
+- Runtime configuration may come from firmware build defaults and or persisted non-volatile storage (NVS) populated during onboarding or reconfiguration.
 - Firmware uses JSON payloads in Phase 1.
 - Device identity is WiFi station MAC rendered as uppercase 12-char hex string with no separators.
 
@@ -74,6 +75,13 @@ Field requirements:
 - Heartbeat payload encoding failure must be logged and not crash the main loop.
 - If MQTT publish fails, firmware logs the failure and retries on the next cadence tick.
 - Main loop must remain non-blocking.
+
+## Configuration Persistence Requirements
+
+- Firmware must support persisting connectivity configuration in NVS so values survive reboot and power loss.
+- At minimum, persisted connectivity configuration includes WiFi SSID, WiFi password, and MQTT broker URI.
+- Firmware may write updated connectivity configuration to NVS at any time when a valid configuration update is received.
+- On persistence failure, firmware must retain and continue using the last known valid connectivity configuration.
 
 ## Non-Functional Constraints
 

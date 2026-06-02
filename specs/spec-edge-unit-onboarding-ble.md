@@ -35,7 +35,7 @@ This spec does not cover production cryptographic key infrastructure, OTA enroll
 3. Main Unit scans for unprovisioned Edge Units over BLE.
 4. Main Unit establishes BLE session with selected Edge Unit.
 5. Main Unit sends provisioning payload.
-6. Edge Unit validates payload and stores values.
+6. Edge Unit validates payload and stores values in persistent local configuration (NVS-backed storage on ESP32).
 7. Edge Unit exits Provisioning Mode and starts normal network bootstrap.
 8. Edge Unit connects to WiFi and MQTT.
 9. Edge Unit publishes first heartbeat to gh/heartbeat.
@@ -70,6 +70,14 @@ Field requirements:
 - mqtt_broker_uri: required string in URI format.
 - heartbeat_interval_ms: optional integer, defaults to 30000 if omitted.
 
+Persistence requirements:
+
+- Edge Unit must persist accepted provisioning values to local non-volatile storage (NVS) so they survive reboot and power loss.
+- At minimum, Edge Unit must persist wifi_ssid, wifi_password, and mqtt_broker_uri.
+- If heartbeat_interval_ms is provided, Edge Unit must persist and apply it.
+- Edge Unit may update these persisted values at any time when a new valid provisioning payload is accepted, including onboarding or later reconfiguration flows.
+- Persistence must be applied as one logical configuration update; on write failure, Edge Unit must retain the last known valid configuration.
+
 ## Validation Rules and Error Handling
 
 Edge Unit must reject onboarding payload when:
@@ -99,6 +107,7 @@ Edge Unit response contract (BLE status response):
 - Edge Unit publishes first heartbeat after successful onboarding.
 - Invalid onboarding payloads are rejected with explicit error codes.
 - Rebooted, already-provisioned Edge Unit skips Provisioning Mode and proceeds to normal startup.
+- Edge Unit loads persisted WiFi and MQTT configuration from NVS on boot and can overwrite persisted values when a newer valid payload is received.
 
 ## Out-of-Scope / Deferred Work
 
