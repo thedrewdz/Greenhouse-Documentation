@@ -12,7 +12,20 @@ For canonical guidance, use:
 
 ## Current Session Notes
 
-- No active repo-level handoff notes.
+- Date: 2026-06-02
+- Owner: Copilot session
+- Goal: Consolidate the docs hub into neutral canonical entry files and finalize onboarding flow language.
+- Completed:
+	- Consolidated AGENTS/CONTEXT into base files and removed consumer-specific variants.
+	- Consolidated README files into a single canonical README.md.
+	- Standardized terminology to Main Unit and Edge Unit across docs.
+	- Added and aligned Plan Interrogation Method language in documentation skills.
+	- Updated Edge Unit onboarding journey with BLE role clarity, timeout flow, restart behavior, and stop-scan-on-navigate-away behavior.
+	- Ensured README.md is the single discoverability index for all docs except agent-handoff.md.
+- Blockers: none.
+- Next actions:
+	- Keep this file updated at end of major maintainer sessions.
+	- Continue using README.md as the single entry point for consuming agents.
 
 ## Template
 
