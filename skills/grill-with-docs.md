@@ -4,7 +4,7 @@
 
 Stress-test plans against existing language and decisions, then update glossary and ADR records inline as decisions crystallize.
 
-Use the same Plan Interrogation Method terminology and behavior as skills/documentation.md.
+Use the same Plan Interrogation Method terminology and behavior as skills/documentation-agent-skill.md.
 
 ## Use This Skill When
 

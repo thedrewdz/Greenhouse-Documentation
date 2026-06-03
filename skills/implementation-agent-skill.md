@@ -6,14 +6,21 @@ Used by role: [../roles/implementation-agent.md](../roles/implementation-agent.m
 
 Implement accepted specs while preserving contracts and architecture boundaries.
 
+## Output Artifact Contract
+
+- In implementation repositories, write spec-stage artifacts to `.agent-output/specs/<spec-name>/`.
+- Use templates from this docs repository as the source format for generated artifacts.
+- Do not write directly to this docs repository.
+
 ## Workflow
 
 1. Read `spec.md`, repo `AGENTS.md`, and relevant technical skills.
-2. Map each planned change to an architectural layer before coding.
-3. Implement only documented behavior.
-4. Add or update tests with implementation changes.
-5. Run local verification.
-6. Record deviations and documentation feedback items.
+2. Create or update `.agent-output/specs/<spec-name>/implementation-plan.md` from `templates/implementation-plan.md`.
+3. Map each planned change to an architectural layer before coding.
+4. Implement only documented behavior.
+5. Add or update tests with implementation changes.
+6. Run local verification.
+7. Record deviations and documentation feedback in `.agent-output/specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md`.
 
 ## Architecture Execution Checklist
 
@@ -33,3 +40,4 @@ If any check fails, fix placement or abstraction boundaries before continuing.
 - No silent contract changes.
 - Verification evidence is captured.
 - Architecture execution checklist is fully satisfied.
+- Required artifacts exist in `.agent-output/specs/<spec-name>/` and follow templates.

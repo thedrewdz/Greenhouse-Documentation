@@ -25,8 +25,10 @@ This folder contains implementation-level specification documents and spec dossi
 - [../templates/spec-dossier-scaffold.md](../templates/spec-dossier-scaffold.md)
 - [../templates/spec.md](../templates/spec.md)
 - [../templates/implementation-plan.md](../templates/implementation-plan.md)
+- [../templates/test-gap-report.md](../templates/test-gap-report.md)
 - [../templates/review-report.md](../templates/review-report.md)
 - [../templates/qa-report.md](../templates/qa-report.md)
 - [../templates/retrospective.md](../templates/retrospective.md)
 - [../templates/doc-feedback.md](../templates/doc-feedback.md)
+- [../templates/promotion-log.md](../templates/promotion-log.md)
 

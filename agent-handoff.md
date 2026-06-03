@@ -53,6 +53,27 @@ For canonical guidance, use:
 	- Optionally pin explicit onboarding session timeout value in `specs/edge-unit-configuration/spec.md` if UI/backend teams need a single default.
 	- Optionally add a lightweight future hardening note for wrong-broker detection (deferred; not required for happy path).
 
+### Session Addendum (Spec Artifact Promotion Flow)
+
+- Date: 2026-06-03
+- Owner: Copilot session
+- Goal: Ensure all agent skills produce template-based spec artifacts in implementation repos and close the loop into durable docs without split ownership.
+- Completed:
+	- Standardized non-documentation agent output location to `.agent-output/specs/<spec-name>/`.
+	- Updated role and skill contracts so implementation, test, code-review, and QA stages generate template-shaped artifacts in local implementation repos.
+	- Added missing lifecycle templates for this flow:
+		- `templates/test-gap-report.md`
+		- `templates/promotion-log.md`
+	- Consolidated artifact promotion ownership into Retrospective Agent.
+	- Removed separate Review Agent role/skill to eliminate overlap.
+	- Updated workflow so Retrospective stage includes artifact promotion from `.agent-output/specs/<spec-name>/` into `specs/<spec-name>/`.
+	- Clarified Retrospective Agent may update other existing docs within `specs/<spec-name>/` as needed to keep dossier consistency.
+	- Updated repo indexes and references to remove `review-agent` links and align with consolidated ownership.
+- Blockers: none.
+- Next actions:
+	- Optional: tighten `roles/code-review-agent.md` wording to explicitly state no artifact-promotion responsibility.
+	- Optional: add a concise promotion checklist to `AGENTS.md` so the contract appears in the highest-precedence policy file.
+
 ## Template
 
 Use this structure for future session entries:

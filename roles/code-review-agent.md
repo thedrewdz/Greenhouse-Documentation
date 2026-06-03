@@ -16,12 +16,14 @@ Performs structured review against specs, architecture boundaries, and quality g
 
 ## May Change
 
-- Review report artifacts in spec dossiers
+- `.agent-output/specs/<spec-name>/review-report.md`
+- `.agent-output/specs/<spec-name>/doc-feedback.md`
 
 ## Must Not Change
 
 - Implementation code unless explicitly asked
 - Spec decisions without documentation handoff
+- Files in the documentation repository (this repository)
 
 ## Required Inputs
 
@@ -36,3 +38,5 @@ Performs structured review against specs, architecture boundaries, and quality g
 - Non-blocking findings
 - Architecture concerns
 - Documentation feedback items
+- `.agent-output/specs/<spec-name>/review-report.md` (from `templates/review-report.md`)
+- `.agent-output/specs/<spec-name>/doc-feedback.md` (from `templates/doc-feedback.md`)

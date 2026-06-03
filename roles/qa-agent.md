@@ -17,11 +17,13 @@ Evaluates user-visible behavior and scenario-level readiness against acceptance 
 ## May Change
 
 - QA report artifacts in spec dossiers
+- `.agent-output/specs/<spec-name>/qa-report.md`
 
 ## Must Not Change
 
 - Implementation code unless explicitly requested
 - Canonical spec behavior without documentation handoff
+- Files in the documentation repository (this repository)
 
 ## Required Inputs
 
@@ -35,3 +37,4 @@ Evaluates user-visible behavior and scenario-level readiness against acceptance 
 - Defect list
 - Spec mismatch list
 - Release recommendation (`go`, `conditional-go`, `no-go`)
+- `.agent-output/specs/<spec-name>/qa-report.md` (from `templates/qa-report.md`)

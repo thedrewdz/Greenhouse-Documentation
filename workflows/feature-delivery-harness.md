@@ -6,6 +6,8 @@ Use this workflow for all non-trivial feature work.
 
 - Use spec dossiers in `specs/<spec-name>/` as the durable source of truth for feature-level work.
 - Each dossier must contain `spec.md` at minimum.
+- In implementation repositories, all non-documentation artifact generation must go to `.agent-output/specs/<spec-name>/`.
+- Only Documentation Agent and Retrospective Agent may write directly to this docs repository.
 - If a stage discovers ambiguity, create a documentation feedback item and route it back to documentation before continuing.
 - Do not silently change contracts in implementation repos.
 
@@ -25,6 +27,7 @@ Outputs:
 - Acceptance criteria
 - Open questions
 - Implementation handoff summary
+- Durable dossier updates in `specs/<spec-name>/` using templates
 
 Exit criteria:
 
@@ -46,6 +49,8 @@ Outputs:
 - Tests added or updated with the implementation
 - Local verification results
 - Deviations from spec and documentation feedback items
+- `.agent-output/specs/<spec-name>/implementation-plan.md`
+- `.agent-output/specs/<spec-name>/doc-feedback.md`
 
 Rules:
 
@@ -68,15 +73,16 @@ Outputs:
 - Test gap report
 - Added or updated tests
 - Remaining untested risks
+- `.agent-output/specs/<spec-name>/test-gap-report.md`
 
 Rules:
 
 - Prefer behavior-focused tests over implementation-detail tests.
 - Include negative-path and degraded-state tests where relevant.
 
-## Stage 4: Review Gate
+## Stage 4: Code Review Gate
 
-Role: Review Agent
+Role: Code Review Agent
 
 Inputs:
 
@@ -91,6 +97,8 @@ Outputs:
 - Non-blocking findings
 - Architecture boundary concerns
 - Documentation feedback items
+- `.agent-output/specs/<spec-name>/review-report.md`
+- `.agent-output/specs/<spec-name>/doc-feedback.md`
 
 Rules:
 
@@ -114,15 +122,16 @@ Outputs:
 - Defects
 - Spec mismatches
 - Release recommendation
+- `.agent-output/specs/<spec-name>/qa-report.md`
 
 Rules:
 
 - Validate user-visible behavior against acceptance criteria.
 - Record doc mismatches as documentation feedback items.
 
-## Stage 6: Retrospective and Guardrail Update
+## Stage 6: Retrospective and Artifact Promotion
 
-Role: Retrospective Agent or Documentation Agent
+Role: Retrospective Agent
 
 Inputs:
 
@@ -132,14 +141,37 @@ Inputs:
 
 Outputs:
 
-- Updated spec, skill, ADR, checklist, or template
-- Summary of what changed and why
+- `.agent-output/specs/<spec-name>/retrospective.md`
+- Guardrail update proposals
+- Promoted artifacts copied into `specs/<spec-name>/` in this docs repository
+- `specs/<spec-name>/promotion-log.md`
 
 Rules:
 
 - Do not add vague rules.
 - Add only reusable guidance that would have prevented or reduced the issue.
-- For every systemic or repeated boundary failure, confirm an updated skill, template, or workflow rule is committed.
+- For every systemic or repeated boundary failure, include at least one concrete guardrail proposal.
+- Record `promoted`, `rejected`, or `deferred` for each artifact candidate from `.agent-output/specs/<spec-name>/`.
+- Promote only artifacts that conform to templates.
+- Retrospective Agent may update other existing documents in `specs/<spec-name>/` to keep the dossier consistent after promotion.
+
+## Stage 7: Durable Documentation Update
+
+Role: Documentation Agent
+
+Inputs:
+
+- Promoted artifacts in `specs/<spec-name>/`
+- `promotion-log.md`
+
+Outputs:
+
+- Durable updates to specs, skills, templates, workflow docs, or ADR-linked guidance
+
+Rules:
+
+- Resolve promoted feedback into canonical docs in this repository.
+- Keep terminology and contracts consistent with `CONTEXT.md` and ADRs.
 
 ## Recommended Dossier Artifacts
 
@@ -150,9 +182,11 @@ At minimum, each spec folder should include:
 Recommended supporting artifacts as work progresses:
 
 - `implementation-plan.md`
+- `test-gap-report.md`
 - `review-report.md`
 - `qa-report.md`
 - `retrospective.md`
 - `doc-feedback.md`
+- `promotion-log.md`
 
 Template scaffolding is provided in `templates/`.

@@ -19,6 +19,7 @@ Owns specification clarity, terminology consistency, and durable documentation u
 
 - Documentation files in this repository
 - Skills and templates in this repository
+- `specs/<spec-name>/` dossier files using templates
 
 ## Must Not Change
 
@@ -37,3 +38,4 @@ Owns specification clarity, terminology consistency, and durable documentation u
 - Explicit acceptance criteria
 - Open questions and assumptions
 - Implementation handoff summary
+- Durable spec artifacts in `specs/<spec-name>/` after retrospective promotion

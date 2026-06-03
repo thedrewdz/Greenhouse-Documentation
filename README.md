@@ -70,10 +70,12 @@ All other documentation files in this repo are listed below and reachable from t
 - [templates/spec-dossier-scaffold.md](templates/spec-dossier-scaffold.md)
 - [templates/spec.md](templates/spec.md)
 - [templates/implementation-plan.md](templates/implementation-plan.md)
+- [templates/test-gap-report.md](templates/test-gap-report.md)
 - [templates/review-report.md](templates/review-report.md)
 - [templates/qa-report.md](templates/qa-report.md)
 - [templates/retrospective.md](templates/retrospective.md)
 - [templates/doc-feedback.md](templates/doc-feedback.md)
+- [templates/promotion-log.md](templates/promotion-log.md)
 
 ## Local MQTT Operations
 
@@ -103,7 +105,6 @@ See also:
 ## Agent Skill Packs
 
 - [skills/README.md](skills/README.md)
-- [skills/documentation.md](skills/documentation.md)
 - [skills/documentation-agent-skill.md](skills/documentation-agent-skill.md)
 - [skills/implementation-agent-skill.md](skills/implementation-agent-skill.md)
 - [skills/test-agent-skill.md](skills/test-agent-skill.md)
