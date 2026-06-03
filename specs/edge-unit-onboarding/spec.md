@@ -44,7 +44,21 @@ This spec does not cover production cryptographic key infrastructure, OTA enroll
 Failure behavior:
 
 - If validation fails, Edge Unit remains in Provisioning Mode and reports reason over BLE response.
-- If WiFi or MQTT connect fails after valid provisioning, Edge Unit keeps retrying with bounded backoff and remains recoverable.
+- If WiFi or MQTT connect fails after valid provisioning, Edge Unit retries with bounded backoff and jitter using a finite retry budget.
+- Phase 1 retry budget is 5 total attempts per bootstrap stage (WiFi and MQTT), counted as consecutive failures within that stage.
+- If either retry budget is exhausted, Edge Unit re-enters Provisioning Mode (BLE) and waits for a new onboarding attempt.
+- If first heartbeat publish fails after MQTT connect, treat this as bootstrap failure in the MQTT stage and continue using the same MQTT retry budget.
+- If first-heartbeat publish keeps failing until MQTT retry budget is exhausted, Edge Unit re-enters Provisioning Mode (BLE) and waits for a new onboarding attempt.
+
+Phase 1 bootstrap timing defaults:
+
+- WiFi connection attempt timeout: 10 seconds per attempt.
+- MQTT connection attempt timeout: 5 seconds per attempt.
+- Retry delay backoff schedule between attempts for a 5-attempt budget: 1s, 2s, 4s, 8s.
+- Retry delay jitter: plus or minus 20 percent applied to each scheduled delay.
+- Retry counters reset when the corresponding stage succeeds (WiFi connected, MQTT connected).
+- Retry counters also reset when a new valid provisioning payload is accepted.
+- When the fifth attempt in a stage fails, Edge Unit must re-enter Provisioning Mode immediately without scheduling another delay.
 
 ## Data Contract and Schema
 
@@ -93,12 +107,36 @@ Edge Unit response contract (BLE status response):
 - error_code: stable integer when result is error
 - error_message: short diagnostic string for local UI
 
+Phase 1 minimum error code set (canonical):
+
+- 0: success
+- 2001: unsupported_schema_version
+- 2002: device_id_mismatch
+- 2003: wifi_ssid_empty
+- 2004: mqtt_broker_uri_invalid
+- 2099: internal_persistence_error
+
+Response rules:
+
+- If result is success, error_code must be 0 and error_message should be empty.
+- If result is error, error_code must be one of the non-zero codes above and error_message must be a short human-readable diagnostic.
+- Edge Unit must return exactly one error code per rejected payload.
+
 ## Non-Functional Constraints
 
 - Provisioning Mode must be bounded and low-power friendly.
 - Retries for WiFi and MQTT remain non-blocking and bounded with jitter.
 - Onboarding should complete within 60 seconds under normal LAN conditions.
 - Edge Unit must never require static IP assumptions for broker reachability.
+
+Bootstrap completion note:
+
+- For Phase 1 onboarding completion, the first heartbeat may be a minimal liveness payload and does not need connected peripheral or slot detail.
+- Detailed slot and peripheral reporting is deferred to subsequent heartbeat revisions.
+- Edge Unit onboarding is complete after the first heartbeat is published successfully to the configured MQTT broker.
+- Edge Unit does not require an explicit onboarding ACK message from the Main Unit in Phase 1.
+- Successful publish confirms broker-session delivery semantics only and does not prove Main Unit processing; Main Unit session-timeout and device_id matching rules are the source of truth for Main Unit completion state.
+- Phase 1 does not require maintaining an active BLE control channel after provisioning payload acceptance; recovery path is re-entering Provisioning Mode and advertising for a new session.
 
 ## Acceptance Criteria
 

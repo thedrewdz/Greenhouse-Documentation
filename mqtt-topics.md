@@ -278,6 +278,12 @@ Heartbeat field requirements and types:
 - slots: required array of slot state objects discovered at startup and updated during operation.
 - capabilities: required array of canonical capability names.
 
+Onboarding bootstrap heartbeat allowance (Phase 1):
+
+- The first heartbeat used to complete onboarding may be a minimal liveness payload that includes at least id and device_id.
+- During this bootstrap heartbeat, slot_count, slots, and capabilities may be omitted.
+- After onboarding completion, subsequent heartbeats must use the full heartbeat schema described above.
+
 Per-slot object requirements:
 
 - slot_id: required integer.
