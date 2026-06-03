@@ -36,28 +36,12 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 - When input is valid, send the provisioning payload required by the BLE onboarding contract.
 - If the Edge Unit rejects the payload, show explicit error details and allow retry.
 - If Wi-Fi or MQTT bootstrap fails after a valid payload, keep the selected device context and allow retry or cancellation.
+- If first-heartbeat publish fails after MQTT connect, treat it as MQTT bootstrap failure and apply the same bounded retry-budget behavior defined in [../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md), including fallback to BLE provisioning when the MQTT-stage retry budget is exhausted.
 - When the first valid heartbeat arrives from the selected device_id for the active onboarding session, persist that heartbeat as the current Edge Unit state and mark onboarding complete.
 - A first heartbeat may also trigger subsequent runtime registration work, but for Phase 1 happy-path onboarding the flow completes at this point.
 - If no valid heartbeat arrives before the onboarding session timeout, mark onboarding failed and show a clear user-facing failure state.
 - Main Unit does not auto-retry onboarding after timeout.
 - If the user selects Retry from the failure state, navigate to the Edge Unit onboarding view and restart BLE scanning as a new onboarding session.
-
-111 x 12
-I’ll update the two onboarding specs to make this explicit: on Main Unit timeout, show failure and require user-initiated retry that restarts BLE scanning; on Edge Unit first-heartbeat publish failure, treat it as bootstrap failure with fallback to BLE provisioning after retry budget exhaustion.
-
-I’ve applied both behavioral clarifications; I’m verifying the exact wording now to ensure it matches your intended flow with no implicit auto-retry semantics.
-
-Agreed, and this is now reflected in the docs exactly as you described.
-
-Updated behavior now documented:
-
-Main Unit timeout handling in spec.md
-If first valid heartbeat is not received before session timeout, onboarding is marked failed.
-Main Unit does not auto-retry.
-User is shown a failure state and must explicitly choose Retry.
-Retry starts a new onboarding session by returning to onboarding view and restarting BLE scan.
-Main Unit completion condition in spec.md
-First valid heartbeat from the selected device_id completes onboarding.
 
 ### Runtime Registration and Slot Mapping
 
