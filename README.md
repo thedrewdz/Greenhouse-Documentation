@@ -112,12 +112,6 @@ See also:
 - [skills/retrospective-agent-skill.md](skills/retrospective-agent-skill.md)
 - [skills/grill-with-docs.md](skills/grill-with-docs.md)
 - [skills/clean-code-contract-first.md](skills/clean-code-contract-first.md)
-- [skills/dotnet-di-without-service-locator.md](skills/dotnet-di-without-service-locator.md)
-- [skills/dotnet-clean-architecture.md](skills/dotnet-clean-architecture.md)
-- [skills/blazor-ui-backend-patterns.md](skills/blazor-ui-backend-patterns.md)
-- [skills/mqtt-contract-integration-dotnet.md](skills/mqtt-contract-integration-dotnet.md)
-- [skills/dotnet-storage-and-persistence.md](skills/dotnet-storage-and-persistence.md)
-- [skills/dotnet-testing-strategy.md](skills/dotnet-testing-strategy.md)
 - [skills/code-review-gate.md](skills/code-review-gate.md)
 - [skills/qa-evaluation.md](skills/qa-evaluation.md)
 

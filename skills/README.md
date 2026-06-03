@@ -33,29 +33,12 @@ This folder contains reusable skills for both Greenhouse documentation domains.
 - qa-evaluation.md
   - Runs scenario-level QA validation and release-readiness checks.
 
-## Main Unit Skills (.NET)
-- dotnet-di-without-service-locator.md
-  - Enforces explicit constructor injection and rejects service locator usage.
-- dotnet-clean-architecture.md
-  - Defines clean C# boundaries across UI, core, messaging, and storage.
-- blazor-ui-backend-patterns.md
-  - Guides touch-first Blazor workflows and component-to-service patterns.
-- mqtt-contract-integration-dotnet.md
-  - Preserves MQTT topic/payload contracts in .NET integration code.
-- dotnet-storage-and-persistence.md
-  - Guides persistence behavior and repository boundaries.
-- dotnet-testing-strategy.md
-  - Guides unit, integration, and contract test coverage for key flows.
-
 ## Usage Guidance
 
 1. Start with documentation.md for scope, naming, and contract clarity.
-2. Pick one primary domain track:
-  - Main Unit track: use .NET skills above.
-  - Edge Firmware track: use ESP32/ESP-IDF skills from the firmware repository.
-3. Add cross-cutting engineering skills for clean design, review, and QA gates.
-4. Select a role skill when running a multi-agent workflow.
-5. Keep terms aligned with the selected CONTEXT file and ADRs.
+2. Use role and cross-cutting engineering skills as needed for the task.
+3. For implementation in consumer repositories, pair these docs skills with repository-local implementation skills.
+4. Keep terms aligned with the selected CONTEXT file and ADRs.
 
 ## Domain Docs Convention
 

@@ -18,6 +18,7 @@ For canonical guidance, use:
 - Completed:
 	- Removed stale links to moved embedded skill docs and the moved onboarding ADR.
 	- Removed all explicit references to greenhouse-edge repository naming/paths.
+	- Removed dead references to deleted .NET-specific skill files from `README.md` and `skills/README.md`.
 	- Restored missing spec files under `specs/`:
 		- `specs/edge-unit-configuration/spec.md`
 		- `specs/edge-unit-onboarding/spec.md`
