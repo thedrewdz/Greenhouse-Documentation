@@ -12,19 +12,26 @@ For canonical guidance, use:
 
 ## Current Session Notes
 
-- Date: 2026-06-02
+- Date: 2026-06-03
 - Owner: Copilot session
-- Goal: Clarify Edge Unit runtime configuration persistence expectations for WiFi and MQTT onboarding settings.
+- Goal: Convert docs repo to multi-agent workflow with spec dossiers, role contracts, and reusable cross-stack skills.
 - Completed:
-	- Updated onboarding specs to require persisting accepted provisioning values in NVS-backed storage.
-	- Added explicit persistence requirements for wifi_ssid, wifi_password, mqtt_broker_uri, and optional heartbeat_interval_ms.
-	- Added acceptance criteria that persisted config is loaded on boot and can be overwritten by newer valid payloads.
-	- Updated heartbeat skeleton spec to allow runtime configuration sourced from build defaults and or NVS.
-	- Added explicit heartbeat-spec configuration persistence requirements including update-at-any-time allowance and write-failure fallback behavior.
-	- Confirmed no new standalone NVS skill is needed for now; keep guidance embedded in existing docs and skills.
+	- Reworked `workflows/feature-delivery-harness.md` into a full stage-based workflow with quality and feedback gates.
+	- Collapsed journey docs into spec dossiers and removed `journeys/` as a canonical source.
+	- Converted specs from flat files to dossier folders with `spec.md` entry points.
+	- Renamed dossier folders for concise naming (`edge-unit-onboarding`, `edge-unit-configuration`).
+	- Added template scaffold set for spec lifecycle artifacts under `templates/`.
+	- Added role contracts under `roles/` and paired role skills under `skills/` with cross-references.
+	- Generalized cross-cutting skills to avoid unnecessary project/stack coupling.
+	- Renamed and cleaned shared skill names (`grill-with-docs.md`, `clean-code-contract-first.md`, `code-review-gate.md`, `qa-evaluation.md`).
+	- Added architecture-boundary prevention loop:
+		- Principle-first review guidance with concise never-event blockers.
+		- Implementation architecture checklist to prevent boundary drift before review.
+		- Review and retrospective templates updated for guardrail follow-through.
 - Blockers: none.
 - Next actions:
-	- If recurring firmware tasks require repeatable NVS migration and recovery guidance, add a short Configuration Persistence subsection to skills/esp-idf-firmware-practices.md.
+	- Optionally move stack-specific skills (.NET and ESP32/ESP-IDF) into their respective implementation repos.
+	- Add central policy language clarifying repo-local stack mapping docs are supplemental to central principles.
 
 ## Template
 

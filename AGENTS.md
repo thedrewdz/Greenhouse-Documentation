@@ -47,7 +47,6 @@ Read ADR files relevant to touched areas:
 Read area-specific docs when applicable:
 
 - control-unit-model.md
-- journeys/README.md
 - specs/README.md
 
 ## Repository Rules

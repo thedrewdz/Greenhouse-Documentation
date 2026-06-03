@@ -6,11 +6,34 @@ This folder contains reusable skills for both Greenhouse documentation domains.
 
 - documentation.md
   - Produces consistent implementation-ready documentation and runs one-question-at-a-time plan interrogation when scope is ambiguous.
+- grill-with-docs.md
+  - Challenges plans against glossary terms and ADR decisions, then updates docs inline.
+
+## Role Skills
+
+- documentation-agent-skill.md
+  - Governs documentation-role output quality and handoff readiness.
+- implementation-agent-skill.md
+  - Governs implementation-role execution from accepted specs.
+- test-agent-skill.md
+  - Governs test-role coverage and risk reporting.
+- code-review-agent-skill.md
+  - Governs review-role findings quality and classification.
+- qa-agent-skill.md
+  - Governs QA-role scenario validation and release recommendation.
+- retrospective-agent-skill.md
+  - Governs retrospective-role guardrail update quality.
+
+## Cross-Cutting Engineering Skills
+
+- clean-code-contract-first.md
+  - Enforces SOLID and contract-first implementation for maintainable code.
+- code-review-gate.md
+  - Enforces review-gate checks and prioritized improvement feedback.
+- qa-evaluation.md
+  - Runs scenario-level QA validation and release-readiness checks.
 
 ## Main Unit Skills (.NET)
-
-- clean-code-solid-contract-first.md
-  - Enforces SOLID and contract-first implementation for maintainable C# code.
 - dotnet-di-without-service-locator.md
   - Enforces explicit constructor injection and rejects service locator usage.
 - dotnet-clean-architecture.md
@@ -23,13 +46,6 @@ This folder contains reusable skills for both Greenhouse documentation domains.
   - Guides persistence behavior and repository boundaries.
 - dotnet-testing-strategy.md
   - Guides unit, integration, and contract test coverage for key flows.
-- code-review-main-control-unit.md
-  - Enforces review-gate checks and prioritized improvement feedback.
-- qa-evaluation-main-control-unit.md
-  - Runs scenario-level QA validation and release-readiness checks.
-- grill-with-docs-main-control-unit.md
-  - Challenges plans against glossary and ADRs, then updates docs inline.
-
 ## Edge Firmware Skills (ESP32)
 
 - esp32-firmware-architecture.md
@@ -51,8 +67,9 @@ This folder contains reusable skills for both Greenhouse documentation domains.
 2. Pick one primary domain track:
    - Main Unit track: use .NET skills above.
    - Edge Firmware track: use ESP32/ESP-IDF skills above.
-3. Add testing and review-gate skills before finalizing.
-4. Keep terms aligned with the selected CONTEXT file and ADRs.
+3. Add cross-cutting engineering skills for clean design, review, and QA gates.
+4. Select a role skill when running a multi-agent workflow.
+5. Keep terms aligned with the selected CONTEXT file and ADRs.
 
 ## Domain Docs Convention
 

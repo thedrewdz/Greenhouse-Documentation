@@ -1,14 +1,32 @@
 # Specs Index
 
-This folder contains implementation-level specification documents.
+This folder contains implementation-level specification documents and spec dossiers.
 
-## Current Specs
+## Current Spec Dossiers
 
-- spec-edge-unit-onboarding-ble.md
+- [main-unit-setup/spec.md](main-unit-setup/spec.md)
+- [network-recovery/spec.md](network-recovery/spec.md)
+- [empty-dashboard/spec.md](empty-dashboard/spec.md)
+- [edge-unit-configuration/spec.md](edge-unit-configuration/spec.md)
+
+## Contract Specs
+
+- [edge-unit-onboarding/spec.md](edge-unit-onboarding/spec.md)
 
 ## Rules
 
 - Keep specs focused on behavior, contracts, validation, and acceptance criteria.
+- Keep journey material inside spec files or spec dossier files.
 - Keep architectural rationale in adr/.
 - Keep domain terminology in CONTEXT.md.
+
+## Scaffold Templates
+
+- [../templates/spec-dossier-scaffold.md](../templates/spec-dossier-scaffold.md)
+- [../templates/spec.md](../templates/spec.md)
+- [../templates/implementation-plan.md](../templates/implementation-plan.md)
+- [../templates/review-report.md](../templates/review-report.md)
+- [../templates/qa-report.md](../templates/qa-report.md)
+- [../templates/retrospective.md](../templates/retrospective.md)
+- [../templates/doc-feedback.md](../templates/doc-feedback.md)
 

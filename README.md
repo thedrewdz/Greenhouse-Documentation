@@ -55,18 +55,28 @@ All other documentation files in this repo are listed below and reachable from t
 - [adr/README.md](adr/README.md)
 - [adr/0001-ble-first-onboarding.md](adr/0001-ble-first-onboarding.md)
 
-## Journey Docs
-
-- [journeys/README.md](journeys/README.md)
-- [journeys/01-Main Unit Setup.md](journeys/01-Main%20Unit%20Setup.md)
-- [journeys/02-Network Recovery.md](journeys/02-Network%20Recovery.md)
-- [journeys/03-Empty Dashboard.md](journeys/03-Empty%20Dashboard.md)
-- [journeys/04-Edge Unit Onboarding and Reconfiguration.md](journeys/04-Edge%20Unit%20Onboarding%20and%20Reconfiguration.md)
-
-## Shared Specs
+## Spec Dossiers
 
 - [specs/README.md](specs/README.md)
-- [specs/spec-edge-unit-onboarding-ble.md](specs/spec-edge-unit-onboarding-ble.md)
+- [specs/main-unit-setup/spec.md](specs/main-unit-setup/spec.md)
+- [specs/network-recovery/spec.md](specs/network-recovery/spec.md)
+- [specs/empty-dashboard/spec.md](specs/empty-dashboard/spec.md)
+- [specs/edge-unit-configuration/spec.md](specs/edge-unit-configuration/spec.md)
+
+## Contract Specs
+
+- [spec-edge-unit-onboarding-ble.md](spec-edge-unit-onboarding-ble.md)
+- [specs/edge-unit-onboarding/spec.md](specs/edge-unit-onboarding/spec.md)
+
+## Dossier Templates
+
+- [templates/spec-dossier-scaffold.md](templates/spec-dossier-scaffold.md)
+- [templates/spec.md](templates/spec.md)
+- [templates/implementation-plan.md](templates/implementation-plan.md)
+- [templates/review-report.md](templates/review-report.md)
+- [templates/qa-report.md](templates/qa-report.md)
+- [templates/retrospective.md](templates/retrospective.md)
+- [templates/doc-feedback.md](templates/doc-feedback.md)
 
 ## Local MQTT Operations
 
@@ -97,22 +107,37 @@ See also:
 
 - [skills/README.md](skills/README.md)
 - [skills/documentation.md](skills/documentation.md)
-- [skills/grill-with-docs-main-control-unit.md](skills/grill-with-docs-main-control-unit.md)
-- [skills/clean-code-solid-contract-first.md](skills/clean-code-solid-contract-first.md)
+- [skills/documentation-agent-skill.md](skills/documentation-agent-skill.md)
+- [skills/implementation-agent-skill.md](skills/implementation-agent-skill.md)
+- [skills/test-agent-skill.md](skills/test-agent-skill.md)
+- [skills/code-review-agent-skill.md](skills/code-review-agent-skill.md)
+- [skills/qa-agent-skill.md](skills/qa-agent-skill.md)
+- [skills/retrospective-agent-skill.md](skills/retrospective-agent-skill.md)
+- [skills/grill-with-docs.md](skills/grill-with-docs.md)
+- [skills/clean-code-contract-first.md](skills/clean-code-contract-first.md)
 - [skills/dotnet-di-without-service-locator.md](skills/dotnet-di-without-service-locator.md)
 - [skills/dotnet-clean-architecture.md](skills/dotnet-clean-architecture.md)
 - [skills/blazor-ui-backend-patterns.md](skills/blazor-ui-backend-patterns.md)
 - [skills/mqtt-contract-integration-dotnet.md](skills/mqtt-contract-integration-dotnet.md)
 - [skills/dotnet-storage-and-persistence.md](skills/dotnet-storage-and-persistence.md)
 - [skills/dotnet-testing-strategy.md](skills/dotnet-testing-strategy.md)
-- [skills/code-review-main-control-unit.md](skills/code-review-main-control-unit.md)
-- [skills/qa-evaluation-main-control-unit.md](skills/qa-evaluation-main-control-unit.md)
+- [skills/code-review-gate.md](skills/code-review-gate.md)
+- [skills/qa-evaluation.md](skills/qa-evaluation.md)
 - [skills/esp32-firmware-architecture.md](skills/esp32-firmware-architecture.md)
 - [skills/esp32-i2c-bus-reliability.md](skills/esp32-i2c-bus-reliability.md)
 - [skills/esp32-wifi-mqtt-resilience.md](skills/esp32-wifi-mqtt-resilience.md)
 - [skills/esp-idf-firmware-practices.md](skills/esp-idf-firmware-practices.md)
 - [skills/esp-idf-testing-strategy.md](skills/esp-idf-testing-strategy.md)
 - [skills/embedded-oo-coding-standards.md](skills/embedded-oo-coding-standards.md)
+
+## Role Contracts
+
+- [roles/documentation-agent.md](roles/documentation-agent.md)
+- [roles/implementation-agent.md](roles/implementation-agent.md)
+- [roles/test-agent.md](roles/test-agent.md)
+- [roles/code-review-agent.md](roles/code-review-agent.md)
+- [roles/qa-agent.md](roles/qa-agent.md)
+- [roles/retrospective-agent.md](roles/retrospective-agent.md)
 
 ## Archived Template Readmes
 

@@ -1,8 +1,8 @@
-# Skill: Grill with Docs for Main Unit
+# Skill: Grill with Docs
 
 ## Purpose
 
-Stress-test plans against existing Main Unit language and decisions, then update glossary and ADR records inline as decisions crystallize.
+Stress-test plans against existing language and decisions, then update glossary and ADR records inline as decisions crystallize.
 
 Use the same Plan Interrogation Method terminology and behavior as skills/documentation.md.
 
@@ -11,6 +11,8 @@ Use the same Plan Interrogation Method terminology and behavior as skills/docume
 - A plan is fuzzy and needs precise terminology.
 - A feature design touches domain language, flow boundaries, or hard-to-reverse decisions.
 - You need to challenge assumptions before code implementation.
+- An implementation or spec contains ambiguity or vagueness.
+- A spec is not yet complete and ready to implement.
 
 ## Workflow
 
@@ -39,14 +41,15 @@ Use this method whenever a user provides a plan, direction, architecture, or req
 - Never ask a bundled list of unrelated questions in one turn.
 - Ask the single highest-leverage unresolved question first.
 - After the user responds, update assumptions and continue to the next question.
+- The next question may be a focused follow-up to the user's response.
 
 ### Recommendation Rule
 
 For every question, include:
 
-- why the question matters
-- a recommended default answer based on current evidence
-- what would change if the user chooses a different answer
+- Why the question matters.
+- A recommended default answer based on current evidence.
+- What would change if a different answer is chosen.
 
 ## Challenge Rules
 
@@ -60,6 +63,7 @@ For every question, include:
 - Keep CONTEXT glossary-only and free of implementation detail.
 - Keep ADRs concise and decision-focused.
 - Create files lazily only when there is concrete content to record.
+- Ensure ADRs are summarized in a central ADR digest so that agents can easily find a relevant ADR without having to read each ADR in detail.
 
 ## Quality Gate
 

@@ -13,7 +13,7 @@ Canonical references for adjacent concerns:
 - Domain language: `CONTEXT.md`
 - Durable agent policy: `AGENTS.md`
 - Onboarding decision record: `adr/0001-ble-first-onboarding.md`
-- Edge Unit onboarding payload contract: `specs/spec-edge-unit-onboarding-ble.md`
+- Edge Unit onboarding payload contract: `specs/edge-unit-onboarding/spec.md`
 
 The Main Unit is the local-first brain of the greenhouse automation platform. It runs on a Raspberry Pi, communicates with ESP32 Edge Unit nodes over MQTT, stores local state/history, hosts the local web dashboard, and executes deterministic automation rules.
 
@@ -890,10 +890,10 @@ public interface ITelemetryService
 
 ## Setup and General Configuration
 
-The setup user journeys are documented separately in:
+The setup and flow dossiers are documented separately in:
 
-- `journeys/01-Main Unit Setup.md`
-- `journeys/04-Edge Unit Onboarding and Reconfiguration.md`
+- `specs/main-unit-setup/spec.md`
+- `specs/edge-unit-configuration/spec.md`
 
 Use the following flow names consistently to avoid ambiguity:
 
