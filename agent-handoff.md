@@ -14,24 +14,18 @@ For canonical guidance, use:
 
 - Date: 2026-06-03
 - Owner: Copilot session
-- Goal: Convert docs repo to multi-agent workflow with spec dossiers, role contracts, and reusable cross-stack skills.
+- Goal: Reconcile moved embedded docs, fix incorrect references, and restore missing specs as source of truth in this docs repository.
 - Completed:
-	- Reworked `workflows/feature-delivery-harness.md` into a full stage-based workflow with quality and feedback gates.
-	- Collapsed journey docs into spec dossiers and removed `journeys/` as a canonical source.
-	- Converted specs from flat files to dossier folders with `spec.md` entry points.
-	- Renamed dossier folders for concise naming (`edge-unit-onboarding`, `edge-unit-configuration`).
-	- Added template scaffold set for spec lifecycle artifacts under `templates/`.
-	- Added role contracts under `roles/` and paired role skills under `skills/` with cross-references.
-	- Generalized cross-cutting skills to avoid unnecessary project/stack coupling.
-	- Renamed and cleaned shared skill names (`grill-with-docs.md`, `clean-code-contract-first.md`, `code-review-gate.md`, `qa-evaluation.md`).
-	- Added architecture-boundary prevention loop:
-		- Principle-first review guidance with concise never-event blockers.
-		- Implementation architecture checklist to prevent boundary drift before review.
-		- Review and retrospective templates updated for guardrail follow-through.
+	- Removed stale links to moved embedded skill docs and the moved onboarding ADR.
+	- Removed all explicit references to greenhouse-edge repository naming/paths.
+	- Restored missing spec files under `specs/`:
+		- `specs/edge-unit-configuration/spec.md`
+		- `specs/edge-unit-onboarding/spec.md`
+	- Repaired index links in `README.md` and `specs/README.md` to point at existing spec files.
+	- Validated repository markdown references with a full local-link scan (no broken links remaining).
 - Blockers: none.
 - Next actions:
-	- Optionally move stack-specific skills (.NET and ESP32/ESP-IDF) into their respective implementation repos.
-	- Add central policy language clarifying repo-local stack mapping docs are supplemental to central principles.
+	- If required, align remaining supplemental docs with current canonical-source policy while preserving spec ownership in this repo.
 
 ## Template
 
