@@ -91,15 +91,21 @@ For every question, include:
 ## Workflow
 
 1. Read all in-scope docs and identify conflicts, gaps, and duplicates.
-2. If the plan is ambiguous, run the Plan Interrogation Method until major decisions are explicit.
-3. Normalize terms and decide canonical wording.
-4. Create or update `specs/<spec-name>/spec.md` using `templates/spec.md` when behavior contracts change.
-5. Rewrite sections to be explicit, testable, and implementation-ready.
-6. Add examples and acceptance criteria where missing.
-7. If needed, update `specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md` to close documented feedback loops.
-8. Run a final consistency pass across related documents.
-9. Record open questions and assumptions.
-10. Prepare implementation handoff summary.
+2. Read `spec.md` status in the Spec Control section.
+3. If status is `blocked`, resolve blockers first or keep status `blocked` with updated rationale.
+4. If the plan is ambiguous, run the Plan Interrogation Method until major decisions are explicit.
+5. Normalize terms and decide canonical wording.
+6. Create or update `specs/<spec-name>/spec.md` using `templates/spec.md` when behavior contracts change.
+7. Rewrite sections to be explicit, testable, and implementation-ready.
+8. Add examples and acceptance criteria where missing.
+9. If needed, update `specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md` to close documented feedback loops.
+10. Run a final consistency pass across related documents.
+11. Record open questions and assumptions.
+12. Update Spec Control fields (`Status`, `Status Updated At`, `Status Updated By`, `Status Reason`) and append Status History:
+13. Set status to `ready-for-implementation` only when the quality gate passes and no ambiguous implementation blockers remain.
+14. Keep or set status `new` when drafting is incomplete.
+15. Set status to `blocked` when unresolved contradictions or missing required decisions prevent safe implementation.
+16. Prepare implementation handoff summary.
 
 ## Quality Gate (Must Pass)
 
@@ -112,6 +118,7 @@ For every question, include:
 - No ambiguous requirements remain for the next implementation step.
 - Acceptance criteria are testable.
 - Terminology is canonical and consistent with CONTEXT.md.
+- Spec status reflects current readiness and has a traceable history entry.
 
 ## Output Checklist
 

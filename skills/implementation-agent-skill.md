@@ -15,12 +15,17 @@ Implement accepted specs while preserving contracts and architecture boundaries.
 ## Workflow
 
 1. Read `spec.md`, repo `AGENTS.md`, and relevant technical skills.
-2. Create or update `.agent-output/specs/<spec-name>/implementation-plan.md` from `templates/implementation-plan.md`.
-3. Map each planned change to an architectural layer before coding.
-4. Implement only documented behavior.
-5. Add or update tests with implementation changes.
-6. Run local verification.
-7. Record deviations and documentation feedback in `.agent-output/specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md`.
+2. Read `spec.md` Spec Control status.
+3. Entry gate: continue only when status is `ready-for-implementation` or `implementation-in-progress`.
+4. If status is `new`, `blocked`, or any later-stage status, stop and emit a handoff failure with required upstream role and reason.
+5. On accepted entry, set status to `implementation-in-progress` and append Status History.
+6. Create or update `.agent-output/specs/<spec-name>/implementation-plan.md` from `templates/implementation-plan.md`.
+7. Map each planned change to an architectural layer before coding.
+8. Implement only documented behavior.
+9. Add or update tests with implementation changes.
+10. Run local verification.
+11. Record deviations and documentation feedback in `.agent-output/specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md`.
+12. When implementation quality gate passes, set status to `ready-for-test` and append Status History.
 
 ## Architecture Execution Checklist
 
@@ -41,3 +46,4 @@ If any check fails, fix placement or abstraction boundaries before continuing.
 - Verification evidence is captured.
 - Architecture execution checklist is fully satisfied.
 - Required artifacts exist in `.agent-output/specs/<spec-name>/` and follow templates.
+- `spec.md` status transition to `ready-for-test` is recorded.

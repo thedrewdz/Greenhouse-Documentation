@@ -19,6 +19,7 @@ This folder contains implementation-level specification documents and spec dossi
 - Keep journey material inside spec files or spec dossier files.
 - Keep architectural rationale in adr/.
 - Keep domain terminology in CONTEXT.md.
+- Include Spec Control status fields and status history in every `spec.md`.
 
 ## Scaffold Templates
 

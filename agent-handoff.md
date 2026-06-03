@@ -74,6 +74,48 @@ For canonical guidance, use:
 	- Optional: tighten `roles/code-review-agent.md` wording to explicitly state no artifact-promotion responsibility.
 	- Optional: add a concise promotion checklist to `AGENTS.md` so the contract appears in the highest-precedence policy file.
 
+### Session Addendum (Spec Status Lifecycle and Stage Gates)
+
+- Date: 2026-06-03
+- Owner: Copilot session
+- Goal: Add explicit spec lifecycle status tracking and enforce stage-entry gating so agents only execute when handoff readiness is met.
+- Completed:
+	- Added Spec Control section to `templates/spec.md` with:
+		- status field
+		- status metadata (`updated at`, `updated by`, `reason`)
+		- allowed status values
+		- transition rules
+		- status history log format
+	- Defined canonical statuses:
+		- `new`
+		- `ready-for-implementation`
+		- `implementation-in-progress`
+		- `ready-for-test`
+		- `test-in-progress`
+		- `ready-for-review`
+		- `review-in-progress`
+		- `ready-for-qa`
+		- `qa-in-progress`
+		- `complete`
+		- `blocked`
+	- Updated role skills to enforce status entry gates and explicit status transitions:
+		- `skills/documentation-agent-skill.md`
+		- `skills/implementation-agent-skill.md`
+		- `skills/test-agent-skill.md`
+		- `skills/code-review-agent-skill.md`
+		- `skills/qa-agent-skill.md`
+		- `skills/retrospective-agent-skill.md`
+	- Added canonical lifecycle and per-stage entry/exit status rules to `workflows/feature-delivery-harness.md`.
+	- Updated index-level reminders in:
+		- `skills/README.md`
+		- `specs/README.md`
+	- Explicitly enforced implementation-stage behavior:
+		- implementation must stop with handoff failure when spec status is not `ready-for-implementation` (or `implementation-in-progress` for resumed work), including when status is `new`.
+- Blockers: none.
+- Next actions:
+	- Optional: add a short status decision matrix to `roles/*.md` files for quick operator reference.
+	- Optional: seed one live dossier under `specs/<spec-name>/spec.md` with the new Spec Control section as an example migration.
+
 ## Template
 
 Use this structure for future session entries:
