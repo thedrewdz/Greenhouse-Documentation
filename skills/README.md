@@ -46,27 +46,13 @@ This folder contains reusable skills for both Greenhouse documentation domains.
   - Guides persistence behavior and repository boundaries.
 - dotnet-testing-strategy.md
   - Guides unit, integration, and contract test coverage for key flows.
-## Edge Firmware Skills (ESP32)
-
-- esp32-firmware-architecture.md
-  - Enforces layered firmware architecture and startup/runtime patterns.
-- esp32-i2c-bus-reliability.md
-  - Covers shared-bus I2C design, recovery, and fault reporting.
-- esp32-wifi-mqtt-resilience.md
-  - Covers non-blocking reconnect, command handling, and offline behavior.
-- esp-idf-firmware-practices.md
-  - Enforces ESP-IDF component structure, FreeRTOS safety, and header/source separation.
-- esp-idf-testing-strategy.md
-  - Defines unit, host-mock, and hardware-in-loop testing strategy for ESP-IDF firmware.
-- embedded-oo-coding-standards.md
-  - Enforces object-oriented design and code quality standards.
 
 ## Usage Guidance
 
 1. Start with documentation.md for scope, naming, and contract clarity.
 2. Pick one primary domain track:
-   - Main Unit track: use .NET skills above.
-   - Edge Firmware track: use ESP32/ESP-IDF skills above.
+  - Main Unit track: use .NET skills above.
+  - Edge Firmware track: use ESP32/ESP-IDF skills from the firmware repository.
 3. Add cross-cutting engineering skills for clean design, review, and QA gates.
 4. Select a role skill when running a multi-agent workflow.
 5. Keep terms aligned with the selected CONTEXT file and ADRs.

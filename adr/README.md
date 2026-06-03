@@ -42,7 +42,7 @@ For each ADR, include:
 
 | ADR | Status | Decision Summary | Affected Domains/Components | Constraints / Non-Negotiables | Supersedes / Superseded By | Canonical File |
 |---|---|---|---|---|---|---|
-| 0001 - BLE-first onboarding for Edge Units | accepted | Phase 1 onboarding defaults to BLE; wired onboarding is fallback for recovery/manufacturing. | Edge Unit bootstrap flow, Main Unit onboarding service, provisioning contract, WiFi/MQTT startup sequence | Non-technical onboarding priority, no static-IP requirement, wired fallback retained | Supersedes: none; Superseded by: none | adr/0001-ble-first-onboarding.md |
+| No local ADR files currently tracked in this repository. | n/a | ADR content is maintained in domain repositories as applicable. | n/a | Keep this digest aligned with any ADRs added here later. | n/a | n/a |
 
 ## Naming
 

@@ -47,13 +47,11 @@ All other documentation files in this repo are listed below and reachable from t
 
 ## Edge Firmware Docs
 
-- [spec-edge-unit-onboarding-ble.md](spec-edge-unit-onboarding-ble.md)
-- [spec-heartbeat-phase1-skeleton.md](spec-heartbeat-phase1-skeleton.md)
+- [specs/edge-unit-onboarding/spec.md](specs/edge-unit-onboarding/spec.md)
 
 ## ADR Docs
 
 - [adr/README.md](adr/README.md)
-- [adr/0001-ble-first-onboarding.md](adr/0001-ble-first-onboarding.md)
 
 ## Spec Dossiers
 
@@ -65,7 +63,6 @@ All other documentation files in this repo are listed below and reachable from t
 
 ## Contract Specs
 
-- [spec-edge-unit-onboarding-ble.md](spec-edge-unit-onboarding-ble.md)
 - [specs/edge-unit-onboarding/spec.md](specs/edge-unit-onboarding/spec.md)
 
 ## Dossier Templates
@@ -101,7 +98,7 @@ mosquitto_sub -h localhost -t "gh/#" -v
 See also:
 
 - [mqtt-topics.md](mqtt-topics.md)
-- [spec-heartbeat-phase1-skeleton.md](spec-heartbeat-phase1-skeleton.md)
+- Edge firmware heartbeat contract documentation moved to `esp32-main`.
 
 ## Agent Skill Packs
 
@@ -123,12 +120,6 @@ See also:
 - [skills/dotnet-testing-strategy.md](skills/dotnet-testing-strategy.md)
 - [skills/code-review-gate.md](skills/code-review-gate.md)
 - [skills/qa-evaluation.md](skills/qa-evaluation.md)
-- [skills/esp32-firmware-architecture.md](skills/esp32-firmware-architecture.md)
-- [skills/esp32-i2c-bus-reliability.md](skills/esp32-i2c-bus-reliability.md)
-- [skills/esp32-wifi-mqtt-resilience.md](skills/esp32-wifi-mqtt-resilience.md)
-- [skills/esp-idf-firmware-practices.md](skills/esp-idf-firmware-practices.md)
-- [skills/esp-idf-testing-strategy.md](skills/esp-idf-testing-strategy.md)
-- [skills/embedded-oo-coding-standards.md](skills/embedded-oo-coding-standards.md)
 
 ## Role Contracts
 
@@ -144,8 +135,5 @@ See also:
 - [references/experiments-ex2/include/README](references/experiments-ex2/include/README)
 - [references/experiments-ex2/lib/README](references/experiments-ex2/lib/README)
 - [references/experiments-ex2/test/README](references/experiments-ex2/test/README)
-- [references/greenhouse-edge/include/README](references/greenhouse-edge/include/README)
-- [references/greenhouse-edge/lib/README](references/greenhouse-edge/lib/README)
-- [references/greenhouse-edge/test/README](references/greenhouse-edge/test/README)
 
 

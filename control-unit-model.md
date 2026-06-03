@@ -12,7 +12,6 @@ Canonical references for adjacent concerns:
 
 - Domain language: `CONTEXT.md`
 - Durable agent policy: `AGENTS.md`
-- Onboarding decision record: `adr/0001-ble-first-onboarding.md`
 - Edge Unit onboarding payload contract: `specs/edge-unit-onboarding/spec.md`
 
 The Main Unit is the local-first brain of the greenhouse automation platform. It runs on a Raspberry Pi, communicates with ESP32 Edge Unit nodes over MQTT, stores local state/history, hosts the local web dashboard, and executes deterministic automation rules.
