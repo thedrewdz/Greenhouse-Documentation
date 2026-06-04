@@ -127,6 +127,26 @@ Field requirements and types:
 
 This contract allows one parser for both read and write topics.
 
+## Runtime Configuration Topics (Phase 1)
+
+Main Unit publishes runtime registration and reconfiguration mapping updates on a dedicated configuration channel.
+
+### Configuration Write
+
+`ghcfg/wr-{deviceId}`
+
+- Main Unit publishes one configuration message per mapping version update.
+- `{deviceId}` must match payload `device_id`.
+
+### Configuration Acknowledge
+
+`ghcfg/ack-{deviceId}`
+
+- Edge Unit publishes one ack for each received configuration message.
+- Ack includes correlation by `message_id` and `mapping_version`.
+
+Canonical payload shape and error code semantics for this channel are defined in [specs/edge-unit-configuration/spec.md](specs/edge-unit-configuration/spec.md).
+
 ## Response Topics
 
 Edge Unit publishes a response payload in response to a command.
