@@ -3,6 +3,7 @@
 ## Inputs Reviewed
 
 - `spec.md`
+- `.agent-output/specs/<spec-name>/spec-status.md`
 - Code diff
 - Test results
 

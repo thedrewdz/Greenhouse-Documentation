@@ -7,6 +7,7 @@ For implementation repositories, mirror the same dossier shape under `.agent-out
 ## Required
 
 - `spec.md`
+- `status.md` (from `templates/spec-canonical-status.md`)
 
 ## Recommended Lifecycle Files
 
@@ -24,7 +25,8 @@ For implementation repositories, mirror the same dossier shape under `.agent-out
 2. In implementation repositories, create `.agent-output/specs/<spec-name>/`.
 3. Copy templates from this folder into the appropriate dossier location.
 4. Start by filling `spec.md` first in the docs repository.
-5. Add lifecycle files as each stage completes.
+5. Create `status.md` and set initial status (`new` or `ready-for-dev`) before implementation handoff.
+6. Add lifecycle files as each stage completes.
 
 ## Suggested Naming
 

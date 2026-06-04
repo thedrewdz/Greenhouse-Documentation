@@ -10,7 +10,9 @@ Produce complete, detailed, consistent, and concise documentation that is easy f
 
 - This role may write directly to this docs repository.
 - Write durable spec artifacts to `specs/<spec-name>/` using templates in `templates/`.
+- Create or update canonical milestone status at `specs/<spec-name>/status.md` from `templates/spec-canonical-status.md`.
 - Consume promoted artifacts that the Retrospective Agent copied from `.agent-output/specs/<spec-name>/` in implementation repositories.
+- If an expected artifact is not required for the task, create it with `Not required` and a concrete reason.
 
 ## Use This Skill When
 
@@ -91,21 +93,27 @@ For every question, include:
 ## Workflow
 
 1. Read all in-scope docs and identify conflicts, gaps, and duplicates.
-2. Read `spec.md` status in the Spec Control section.
-3. If status is `blocked`, resolve blockers first or keep status `blocked` with updated rationale.
-4. If the plan is ambiguous, run the Plan Interrogation Method until major decisions are explicit.
-5. Normalize terms and decide canonical wording.
-6. Create or update `specs/<spec-name>/spec.md` using `templates/spec.md` when behavior contracts change.
-7. Rewrite sections to be explicit, testable, and implementation-ready.
-8. Add examples and acceptance criteria where missing.
-9. If needed, update `specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md` to close documented feedback loops.
-10. Run a final consistency pass across related documents.
-11. Record open questions and assumptions.
-12. Update Spec Control fields (`Status`, `Status Updated At`, `Status Updated By`, `Status Reason`) and append Status History:
-13. Set status to `ready-for-implementation` only when the quality gate passes and no ambiguous implementation blockers remain.
-14. Keep or set status `new` when drafting is incomplete.
-15. Set status to `blocked` when unresolved contradictions or missing required decisions prevent safe implementation.
-16. Prepare implementation handoff summary.
+2. Pull latest remote changes (`git pull --ff-only`) and stop on conflicts.
+3. Check `.agent-output/specs/<spec-name>/` for incoming artifacts before commencing.
+4. Read canonical status from `specs/<spec-name>/status.md`.
+5. Read execution status from `.agent-output/specs/<spec-name>/spec-status.md` when available.
+6. If either status is `blocked`, resolve blockers first or keep status `blocked` with updated rationale.
+7. If the plan is ambiguous, run the Plan Interrogation Method until major decisions are explicit.
+8. Normalize terms and decide canonical wording.
+9. Create or update `specs/<spec-name>/spec.md` using `templates/spec.md` when behavior contracts change.
+10. Rewrite sections to be explicit, testable, and implementation-ready.
+11. Add examples and acceptance criteria where missing.
+12. If needed, update `specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md` to close documented feedback loops.
+13. Run a final consistency pass across related documents.
+14. Record open questions and assumptions.
+15. Create or update `specs/<spec-name>/status.md` from `templates/spec-canonical-status.md`.
+16. Set canonical status in `status.md`:
+17. Set `ready-for-dev` when quality gate passes and no ambiguous implementation blockers remain.
+18. Keep or set `new` when drafting is incomplete.
+19. Set `blocked` when unresolved contradictions or missing required decisions prevent safe implementation.
+20. Set `in-dev` when execution status indicates implementation lifecycle activity.
+21. Append canonical Status History in `status.md`.
+22. Prepare implementation handoff summary.
 
 ## Quality Gate (Must Pass)
 
@@ -118,11 +126,12 @@ For every question, include:
 - No ambiguous requirements remain for the next implementation step.
 - Acceptance criteria are testable.
 - Terminology is canonical and consistent with CONTEXT.md.
-- Spec status reflects current readiness and has a traceable history entry.
+- Canonical status in `specs/<spec-name>/status.md` reflects current readiness and has a traceable history entry.
 
 ## Output Checklist
 
 - Updated document(s) with explicit scope and constraints.
+- Updated canonical status at `specs/<spec-name>/status.md`.
 - Resolved conflict list (what changed and why).
 - Open questions list (only true blockers).
 - Optional follow-up patch suggestions for adjacent docs.

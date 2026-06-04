@@ -39,7 +39,7 @@ This folder contains reusable skills for both Greenhouse documentation domains.
 2. Use role and cross-cutting engineering skills as needed for the task.
 3. For implementation in consumer repositories, pair these docs skills with repository-local implementation skills.
 4. Keep terms aligned with the selected CONTEXT file and ADRs.
-5. Enforce `spec.md` Spec Control status entry/exit gates for every stage.
+5. Enforce `spec-status.md` entry and exit gates in `.agent-output/specs/<spec-name>/` for every stage.
 
 ## Domain Docs Convention
 

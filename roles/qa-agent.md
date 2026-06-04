@@ -18,6 +18,7 @@ Evaluates user-visible behavior and scenario-level readiness against acceptance 
 
 - QA report artifacts in spec dossiers
 - `.agent-output/specs/<spec-name>/qa-report.md`
+- `.agent-output/specs/<spec-name>/spec-status.md`
 
 ## Must Not Change
 
@@ -38,3 +39,4 @@ Evaluates user-visible behavior and scenario-level readiness against acceptance 
 - Spec mismatch list
 - Release recommendation (`go`, `conditional-go`, `no-go`)
 - `.agent-output/specs/<spec-name>/qa-report.md` (from `templates/qa-report.md`)
+- `.agent-output/specs/<spec-name>/spec-status.md` (from `templates/spec-status.md`)

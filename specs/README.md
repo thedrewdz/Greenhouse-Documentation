@@ -19,12 +19,15 @@ This folder contains implementation-level specification documents and spec dossi
 - Keep journey material inside spec files or spec dossier files.
 - Keep architectural rationale in adr/.
 - Keep domain terminology in CONTEXT.md.
-- Include Spec Control status fields and status history in every `spec.md`.
+- Track canonical docs-repo status in `specs/<spec-name>/status.md` using `templates/spec-canonical-status.md`.
+- Track execution lifecycle status in implementation repos via `.agent-output/specs/<spec-name>/spec-status.md` using `templates/spec-status.md`.
 
 ## Scaffold Templates
 
 - [../templates/spec-dossier-scaffold.md](../templates/spec-dossier-scaffold.md)
 - [../templates/spec.md](../templates/spec.md)
+- [../templates/spec-canonical-status.md](../templates/spec-canonical-status.md)
+- [../templates/spec-status.md](../templates/spec-status.md)
 - [../templates/implementation-plan.md](../templates/implementation-plan.md)
 - [../templates/test-gap-report.md](../templates/test-gap-report.md)
 - [../templates/review-report.md](../templates/review-report.md)

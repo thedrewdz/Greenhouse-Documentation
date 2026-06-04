@@ -7,8 +7,17 @@
 ## Inputs
 
 - `spec.md`
+- `.agent-output/specs/<spec-name>/spec-status.md`
 - Relevant ADRs
 - Relevant skills
+
+## Branch And Preflight
+
+- Work type: `feature` | `bug-fix` | `update`
+- Target branch: `<branch-name>`
+- Existing branch check result: `<none | exists and safe | exists and unsafe>`
+- Main sync check: `<up-to-date | rebased/merged | blocked>`
+- Pull command/result: `<command and outcome>`
 
 ## Proposed Changes
 

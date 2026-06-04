@@ -1,5 +1,11 @@
 # QA Report: <Feature Name>
 
+## Inputs
+
+- `spec.md`
+- `.agent-output/specs/<spec-name>/spec-status.md`
+- `.agent-output/specs/<spec-name>/implementation-plan.md` (branch source of truth)
+
 ## Scope
 
 - Scenarios covered

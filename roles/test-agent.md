@@ -18,6 +18,7 @@ Validates behavioral coverage against accepted specs and identifies residual ris
 - Test files in implementation repositories
 - Test plan artifacts in spec dossiers
 - `.agent-output/specs/<spec-name>/test-gap-report.md`
+- `.agent-output/specs/<spec-name>/spec-status.md`
 
 ## Must Not Change
 
@@ -37,3 +38,5 @@ Validates behavioral coverage against accepted specs and identifies residual ris
 - Added or updated tests
 - Remaining untested risks
 - `.agent-output/specs/<spec-name>/test-gap-report.md` (from `templates/test-gap-report.md`)
+- `.agent-output/specs/<spec-name>/spec-status.md` (from `templates/spec-status.md`)
+- Upstream-pushed artifacts so downstream roles can consume current output

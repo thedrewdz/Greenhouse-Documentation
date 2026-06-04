@@ -21,6 +21,7 @@ Implements accepted behavior from spec dossiers without redefining contracts or 
 - Local handoff notes in implementation repositories
 - `.agent-output/specs/<spec-name>/implementation-plan.md`
 - `.agent-output/specs/<spec-name>/doc-feedback.md`
+- `.agent-output/specs/<spec-name>/spec-status.md`
 
 ## Must Not Change
 
@@ -43,3 +44,4 @@ Implements accepted behavior from spec dossiers without redefining contracts or 
 - Documentation feedback items for ambiguity
 - `.agent-output/specs/<spec-name>/implementation-plan.md` (from `templates/implementation-plan.md`)
 - `.agent-output/specs/<spec-name>/doc-feedback.md` (from `templates/doc-feedback.md`)
+- `.agent-output/specs/<spec-name>/spec-status.md` (from `templates/spec-status.md`)

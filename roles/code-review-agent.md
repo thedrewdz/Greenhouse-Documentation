@@ -18,6 +18,7 @@ Performs structured review against specs, architecture boundaries, and quality g
 
 - `.agent-output/specs/<spec-name>/review-report.md`
 - `.agent-output/specs/<spec-name>/doc-feedback.md`
+- `.agent-output/specs/<spec-name>/spec-status.md`
 
 ## Must Not Change
 
@@ -40,3 +41,4 @@ Performs structured review against specs, architecture boundaries, and quality g
 - Documentation feedback items
 - `.agent-output/specs/<spec-name>/review-report.md` (from `templates/review-report.md`)
 - `.agent-output/specs/<spec-name>/doc-feedback.md` (from `templates/doc-feedback.md`)
+- `.agent-output/specs/<spec-name>/spec-status.md` (from `templates/spec-status.md`)

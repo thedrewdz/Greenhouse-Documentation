@@ -35,6 +35,7 @@ Owns specification clarity, terminology consistency, and durable documentation u
 ## Required Outputs
 
 - Updated `spec.md` or related documentation
+- Updated `specs/<spec-name>/status.md` (from `templates/spec-canonical-status.md`)
 - Explicit acceptance criteria
 - Open questions and assumptions
 - Implementation handoff summary
