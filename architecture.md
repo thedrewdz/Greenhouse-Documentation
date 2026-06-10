@@ -1,348 +1,106 @@
-# System Architecture
+# Software Architecture
 
-# High-Level Architecture
+This document is the central software architecture hub for the Greenhouse platform.
 
-The Greenhouse Automation Platform uses a distributed local-first hardware architecture centered around MQTT messaging.
+Use it to understand software boundaries, dependency direction, runtime collaboration, and implementation constraints. Load the focused detail documents under [architecture/](architecture/) only when the task touches that area.
 
-Core components include:
-- Main Unit
-- Sensor Nodes
-- Actuator Nodes
-- Local Database
-- Automation Engine
-- Web Interface
-- Future AI Services
-- Optional Cloud Services
+For physical deployment, hardware makeup, host choices, Edge Unit makeup, and operational topology, read [system-topology.md](system-topology.md).
 
----
+## Architecture Goals
 
-# Architectural Principles
+- Keep automation local-first and deterministic.
+- Keep domain policy independent from UI, storage, MQTT, hardware drivers, and future cloud or AI adapters.
+- Keep the configured Main Unit able to run headless, without starting or serving the web UI.
+- Preserve MQTT-centered integration while preventing transport details from leaking into domain behavior.
+- Make contracts explicit and testable before implementation.
+- Keep Main Unit setup, network recovery, Edge Unit onboarding, and Edge Unit reconfiguration as separate workflows.
+- Support incremental implementation without speculative frameworks.
 
-## Clean Architecture
+## Software System Boundary
 
-We will separate this solution into the following components:
+The Main Unit is the local system authority for software orchestration:
 
-- Greenhouse.UI                 // ASP.NET Core Blazor UI host
-- Greenhouse.Core               // domain models, device model, message contracts
-- Greenhouse.Mqtt               // MQTT topic handling, publish/subscribe
-- Greenhouse.Storage            // SQLite or LiteDB persistence
+- owns automation policy and scheduling
+- receives telemetry and heartbeat messages
+- issues commands to Edge Units over MQTT
+- persists configuration, topology, telemetry, and audit-relevant state
+- exposes local UI and API surfaces
+- coordinates Edge Unit onboarding and reconfiguration workflows
 
-## Local-First
+The web UI is optional for normal operation after Main Unit setup is complete. A configured Main Unit must be able to start its runtime services, load persisted state, process MQTT traffic, evaluate automation rules, dispatch commands, and maintain state without a browser session, web dashboard, or presentation host being active.
 
-All critical automation executes locally.
+The UI and API are presentation clients of the Main Unit application contracts. They may display state and initiate user-driven use cases, but they must not own automation state, lifecycle-critical subscriptions, scheduling loops, or persistence authority.
 
-Internet connectivity is optional.
+Edge Unit firmware is a cooperating distributed endpoint. It publishes telemetry and heartbeat data, accepts commands, reports state, and enforces local failsafe behavior. Firmware-specific contracts live in [device-model.md](device-model.md), [mqtt-topics.md](mqtt-topics.md), and relevant specs.
 
-The system must continue operating during:
-- ISP outages
-- cloud outages
-- WAN instability
+## Layer Model
 
----
+Use inward dependency direction:
 
-## Message-Oriented Design
+1. Domain: greenhouse concepts, automation rules, invariants, and state transitions.
+2. Application: use cases, workflow orchestration, ports, and transaction boundaries.
+3. Infrastructure: MQTT, persistence, BLE, hardware adapters, OS services, and external integrations.
+4. Presentation: web UI, API endpoints, screens, view models, and user interaction flows.
 
-Subsystems communicate using MQTT.
+Outer layers may depend on inner layers. Inner layers must not depend on outer-layer implementations.
 
-Advantages:
-- decoupling
-- scalability
-- resilience
-- asynchronous communication
-- distributed extensibility
+Read [architecture/layers.md](architecture/layers.md) when changing project/module structure, dependency direction, or layer ownership.
 
----
+## Boundary Rules
 
-## Deterministic Control
+- Parse and validate external input at system boundaries.
+- Translate MQTT payloads, HTTP/API requests, BLE messages, database records, and hardware-driver responses into domain/application models before policy code uses them.
+- Keep domain/application code free of framework, transport, storage, and hardware-driver types.
+- Model error semantics as part of contracts.
+- Treat recurring integration streams, such as heartbeats, as runtime-wide concerns behind shared abstractions.
 
-The automation engine is authoritative.
+Read [architecture/boundaries.md](architecture/boundaries.md) when changing adapters, ports, DTOs, validation, or error handling.
 
-AI systems:
-- suggest
-- analyze
-- recommend
+## Runtime Collaboration
 
-but do not directly operate hardware.
+Runtime behavior is message-oriented but not message-shaped internally:
 
----
+- MQTT is the transport boundary.
+- Application handlers own use-case decisions.
+- Domain services/entities own domain rules and invariants.
+- Infrastructure adapters own subscription, publishing, serialization, retry, and transport-specific behavior.
+- Presentation initiates user-driven use cases through application contracts.
 
-# Main Unit
+Read [architecture/runtime.md](architecture/runtime.md) when changing message handling, background services, subscriptions, scheduling, or use-case orchestration.
 
-## Hardware
+## Persistence
 
-Recommended:
-- Raspberry Pi 4
-or
-- Raspberry Pi 5
+Persistence is an infrastructure detail behind application-owned ports. Storage choices must not shape domain behavior.
 
-Bluetooth baseline for onboarding:
-- Raspberry Pi 4B includes integrated Bluetooth (BLE-capable) and is the Phase 1 onboarding baseline.
+Initial local persistence is SQLite unless a specific spec or ADR says otherwise. Future storage engines must preserve domain-facing contracts and migration paths.
 
-Optional future support:
-- x86 mini-PC
-- industrial host appliance
-- NAS-hosted deployment
+Read [architecture/persistence.md](architecture/persistence.md) when changing repositories, database schema, migrations, telemetry storage, or configuration persistence.
 
----
+## Testing Strategy
 
-## Responsibilities
+Use behavior-focused tests at the smallest useful boundary:
 
-The Main Unit handles:
-- MQTT broker
-- device registration
-- automation rules
-- telemetry ingestion
-- historical persistence
-- web UI
-- web API
-- notifications
-- OTA coordination
-- AI orchestration
-- future cloud synchronization
+- Domain tests for rules, invariants, calculations, and state transitions.
+- Application tests for use cases, orchestration, and port collaboration.
+- Contract tests for MQTT payloads, API schemas, DTO mapping, and adapter interfaces.
+- Integration tests for persistence, MQTT adapters, BLE adapters, and framework wiring.
+- Scenario/QA validation for user-visible workflows and acceptance criteria.
 
-Onboarding and provisioning responsibilities:
-- host BLE onboarding service for unprovisioned Edge Units
-- exchange WiFi credentials and bootstrap MQTT endpoint with new Edge Units
-- confirm onboarding success after first heartbeat
+Read [architecture/testing.md](architecture/testing.md) when planning test coverage, closing test gaps, or reviewing verification strategy.
 
----
+## Detail Documents
 
-# Core Software Stack
+- [architecture/layers.md](architecture/layers.md): layer ownership, dependency direction, and project/module expectations.
+- [architecture/boundaries.md](architecture/boundaries.md): ports, adapters, DTO translation, validation, and error semantics.
+- [architecture/runtime.md](architecture/runtime.md): message handling, background services, subscriptions, and workflow orchestration.
+- [architecture/persistence.md](architecture/persistence.md): storage boundaries, repositories, migrations, telemetry, and configuration state.
+- [architecture/testing.md](architecture/testing.md): test layers, contract tests, integration tests, and acceptance verification.
 
-## Operating System
+## Related Canonical Docs
 
-Preferred:
-- Raspberry Pi Debian Bookworm
-
----
-
-## Containerization
-
-Deployment uses:
-- Phase 1 - No containerization
-- Phase 2 - consider containerization (Docker, Docker Compose)
-
-Advantages:
-- reproducibility
-- isolation
-- easy upgrades
-- simplified deployment
-
----
-
-## Backend
-
-Preferred:
-- ASP.NET Core
-
-Reasons:
-- strong architecture support
-- performance
-- dependency injection
-- clean API development
-- excellent async support
-
----
-
-## Database
-
-Initial:
-- SQLite
-
-Future:
-- PostgreSQL
-
-Telemetry storage may later move toward:
-- TimescaleDB
-- InfluxDB
-
-if higher scale becomes necessary.
-
----
-
-# MQTT Broker
-
-Preferred broker:
-- Mosquitto
-
-Responsibilities:
-- telemetry transport
-- device messaging
-- command routing
-- event publication
-- discovery
-
----
-
-# Edge Units
-
-- Edge Units consist of a single MPU with a set number of edge slots attached.
-- Initially, an Edge Unit will be either a Sensor Edge Unit, or an Actuator Edge Unit
-- Sensor nodes will only have sensors attached
-- Actuator nodes will only have actuators (via relays) connected
-- In the future, nodes may be configured to support a combination of sensors and actuators to support smaller installation at a lower cost.
-
-## Platform
-
-- ESP32
-
-## Onboarding Channel (Phase 1)
-
-- Preferred onboarding channel: BLE
-- Wired provisioning remains optional for recovery and manufacturing workflows.
-- Edge Unit provisioning mode is only active before successful onboarding or after explicit factory reset.
-
----
-
-## Responsibilities
-
-Sensors:
-- read sensors
-- publish telemetry
-- publish heartbeat/status
-- support OTA updates
-- maintain local buffering during outages
-
----
-
-## Example Sensors
-
-- temperature
-- humidity
-- soil moisture
-- CO2
-- pH
-- EC/TDS
-- water level
-- flow sensors
-- light intensity
-
----
-
-# Actuator Nodes
-
-## Platform
-
-- ESP32
-
----
-
-## Responsibilities
-
-Actuator nodes:
-- subscribe to commands
-- execute operations
-- report state
-- fail safely
-- support OTA updates
-
----
-
-## Example Actuators
-
-- pumps
-- solenoid valves
-- fans
-- vents
-- heaters
-- grow lights
-- humidifiers
-- nutrient dosing pumps
-
----
-
-# Automation Engine
-
-The automation engine is responsible for:
-- evaluating rules
-- executing commands
-- enforcing safety constraints
-- scheduling operations
-
-Rules are:
-- deterministic
-- auditable
-- user-visible
-
----
-
-# Rule Model
-
-Rules should eventually support:
-- threshold triggers
-- schedules
-- hysteresis
-- debounce logic
-- time windows
-- logical conditions
-- sensor aggregation
-
-Example:
-- "If soil moisture < 30% for 5 minutes, run pump for 20 seconds."
-
----
-
-# AI Integration
-
-Future AI systems may:
-- analyze telemetry
-- identify anomalies
-- recommend rules
-- generate notifications
-- provide conversational assistance
-
-AI services remain advisory.
-
----
-
-# Future Vision System
-
-Future camera systems may support:
-- plant growth analysis
-- disease detection
-- pest detection
-- canopy monitoring
-- time-lapse imaging
-
-These systems should remain modular and isolated from critical automation.
-
----
-
-# Security Model
-
-Initial deployment assumes:
-- isolated local network
-- trusted LAN environment
-
-Future security features:
-- authentication
-- TLS
-- device certificates
-- role-based access
-- encrypted remote access
-
----
-
-# Scalability Goals
-
-The architecture should support:
-- one greenhouse
-- multiple greenhouses
-- distributed growing sites
-
-without redesigning the communication model.
-
----
-
-# Future Expansion Areas
-
-Potential future modules:
-- mobile applications
-- cloud sync
-- weather integration
-- predictive irrigation
-- energy optimization
-- inventory tracking
-- nutrient recipe management
-- AI plant diagnostics
-
+- [system-topology.md](system-topology.md): physical/logical system makeup, deployment assumptions, hardware, and host configuration.
+- [CONTEXT.md](CONTEXT.md): canonical terminology.
+- [device-model.md](device-model.md): Edge Unit, slot, module, telemetry, heartbeat, and device identity model.
+- [mqtt-topics.md](mqtt-topics.md): MQTT topics and canonical payload contracts.
+- [control-unit-model.md](control-unit-model.md): Main Unit domain model and automation behavior.
+- [workflows/feature-delivery-harness.md](workflows/feature-delivery-harness.md): delivery loop, status gates, and artifact flow.

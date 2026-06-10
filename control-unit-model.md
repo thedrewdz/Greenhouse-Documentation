@@ -18,9 +18,10 @@ The Main Unit is the local-first brain of the greenhouse automation platform. It
 
 The current preferred implementation is:
 
-- **ASP.NET Core Blazor Web App**
-- **Interactive Server render mode**
-- **Global interactivity**
+- **Main Unit runtime host decoupled from the web UI**
+- **ASP.NET Core Blazor Web App for the optional local dashboard**
+- **Interactive Server render mode for the dashboard when enabled**
+- **Global interactivity for the dashboard when enabled**
 - **No authentication initially**
 - **Explicit `Program.cs` with `public static void Main(string[] args)`**
 - **SQLite initially**
@@ -64,6 +65,8 @@ Create a solution that can start simple but cleanly separates responsibilities.
 Recommended projects:
 
 ```text
+Greenhouse.Runtime
+Greenhouse.Runtime.Tests
 Greenhouse.UI
 Greenhouse.UI.Tests
 Greenhouse.Core
@@ -88,18 +91,36 @@ Each project should have its own set of tests in a project co-located with the p
 
 ### Project Responsibilities
 
+#### `Greenhouse.Runtime`
+
+Main Unit runtime host and composition root.
+
+Responsibilities:
+
+- Start the configured Main Unit without requiring the web UI.
+- Register application services and infrastructure implementations.
+- Run hosted background services for MQTT, telemetry ingestion, heartbeat processing, automation scheduling, command dispatch, retries, and persistence.
+- Load persisted configuration, topology, automation rules, and runtime state during startup.
+- Maintain operational state independently from browser sessions and UI component lifecycle.
+
 #### `Greenhouse.UI`
 
-ASP.NET Core Blazor Web App.
+Optional ASP.NET Core Blazor Web App.
 
 Responsibilities:
 
 - Host the web dashboard.
 - Host API endpoints if needed.
-- Register dependency injection services.
-- Run hosted background services.
+- Register presentation services and application-client dependencies.
 - Provide the local appliance UI.
 - Support future kiosk-mode browser usage.
+- Display state from application queries and initiate user-driven use cases through application commands.
+
+Must not:
+
+- Own automation state, topology state, or persisted Main Unit state.
+- Be required for MQTT subscriptions, telemetry ingestion, heartbeat processing, automation scheduling, command dispatch, retries, or persistence.
+- Register lifecycle-critical background services only in the UI host.
 
 Use:
 
@@ -126,7 +147,8 @@ Responsibilities:
 - Service interfaces.
 - Shared enums/value objects.
 - Message queue contracts/abstractions (interfaces)
-- IMessageRouter<TMessage> contract
+- `IMessagingService` contract
+- message envelope model
 
 This project should not depend on ASP.NET Core, MQTTnet, EF Core, SQLite, or Blazor.
 
@@ -139,8 +161,9 @@ Responsibilities:
 - Connect to Mosquitto.
 - Subscribe to topics.
 - Publish to topics.
-- Extract message payloads and deserialize using a generic JSON deserializer.
-- Provide events for received messages.
+- Extract message topic, payload, and transport metadata into a generic message envelope.
+- Implement `IMessagingService`.
+- Provide registration and unsubscription for received message callbacks.
 - Reconnect on broker/network failure.
 
 This project must depend on MQTT client libraries.
@@ -808,54 +831,54 @@ This avoids unnecessary NTP/time complexity on Edge Unit nodes.
 
 ## Messaging Service Design
 
-Implement messaging integration as a hosted background service.
+Implement messaging integration as a hosted background service in the Main Unit runtime host.
 
 Implement messaging abstractions from `Greenhouse.Core`.
 
-The core model must not depend on MQTT concepts or MQTTnet types. Use generic messaging names in `Greenhouse.Core`, such as `MessagingOptions`, `MessagingTopics`, and `IMessagingRepository`.
+The core model must not depend on MQTTnet types. Use generic messaging names in `Greenhouse.Core`, such as `MessagingOptions`, `MessagingTopics`, `MessageEnvelope`, `MessageSubscription`, and `IMessagingService`.
 
-The MQTTnet-specific implementation belongs in the infrastructure-oriented `Greenhouse.Mqtt` project behind repository and service abstractions. UI components and application services should not reference MQTTnet types directly.
+The MQTTnet-specific implementation belongs in the infrastructure-oriented `Greenhouse.Mqtt` project behind service abstractions. UI components and application services should not reference MQTTnet types directly.
 
 ```csharp
-public interface IConnectedService
+public sealed record MessageEnvelope
 {
-    Task StartAsync(CancellationToken cancellationToken);
-    Task StopAsync(CancellationToken cancellationToken);
-    bool IsConnected { get; }
+    public required string Topic { get; init; }
+    public required string Payload { get; init; }
+    public DateTimeOffset ReceivedAtUtc { get; init; }
 }
 
-public interface ICommandPublisher
+public interface IMessageSubscription : IAsyncDisposable
 {
-    Task PublishReadCommandAsync(string deviceId, int slotId, CancellationToken cancellationToken = default);
-    Task PublishWriteCommandAsync(string deviceId, int slotId, string state, CancellationToken cancellationToken = default);
 }
 
-public interface IMessageRouter
-{
-    Task RouteAsync(string topic, string payload, CancellationToken cancellationToken = default);
-}
-
-public interface IMessagingRepository
+public interface IMessagingService
 {
     bool IsConnected { get; }
-    Task ConnectAsync(CancellationToken cancellationToken = default);
-    Task DisconnectAsync(CancellationToken cancellationToken = default);
-    Task SubscribeAsync(string topic, CancellationToken cancellationToken = default);
-    Task PublishAsync(string topic, string payload, CancellationToken cancellationToken = default);
+    Task StartAsync(CancellationToken cancellationToken = default);
+    Task StopAsync(CancellationToken cancellationToken = default);
+    Task SendAsync(MessageEnvelope message, CancellationToken cancellationToken = default);
+    IMessageSubscription RegisterMessageReceived(Func<MessageEnvelope, CancellationToken, Task> handler);
 }
 ```
 
-The hosted service should:
+The runtime-hosted service should:
 
-- Connect at application startup.
-- Subscribe to `gh/heartbeat`.
-- Subscribe to `gh/ack`.
-- Subscribe to `gh/rd`.
+- Connect at runtime startup.
+- Subscribe to configured inbound MQTT topics.
+- Publish outbound MQTT messages requested through `SendAsync`.
+- Notify registered handlers when a message is received.
+- Allow each registered handler to unsubscribe through the returned `IMessageSubscription`.
 - Handle reconnects.
 - Log connection status.
-- Never crash the web app because of a bad message payload.
+- Never crash the runtime process because of a bad message payload.
 
-Bad messages should be logged and ignored or recorded as malformed events.
+`IMessagingService` must be message type/content agnostic. It should not know whether a payload is a heartbeat, telemetry reading, command acknowledgement, read response, onboarding event, reconfiguration event, or future message type. A message is only a topic plus payload and transport metadata at this boundary.
+
+Message senders are responsible for choosing the correct topic and payload. Message subscribers are responsible for deciding whether a received message is relevant, parsing it, validating it, and invoking the correct application use case.
+
+Do not add topic-specific methods such as `PublishHeartbeatAsync`, `HandleAckAsync`, `SubscribeToTelemetryAsync`, or `RouteHeartbeatAsync` to `IMessagingService`.
+
+Bad messages should be logged and ignored or recorded as malformed events by the subscriber that attempted to parse them.
 
 ---
 
@@ -1190,8 +1213,8 @@ Example:
 
 ```csharp
 builder.Services.AddSingleton<ICurrentOperator, LocalKioskOperator>();
-builder.Services.AddSingleton<IMessageRouter, LoggingMessageRouter>();
-builder.Services.AddHostedService<IConnectedService, ConnectedService>();
+builder.Services.AddSingleton<IMessagingService, MessagingService>();
+builder.Services.AddHostedService<MessagingHostedService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 ```
 
@@ -1211,20 +1234,22 @@ or create scopes explicitly.
 
 ### Milestone 1: Empty App Foundation
 
-- Create Blazor Web App.
+- Create Main Unit runtime host.
+- Create optional Blazor Web App dashboard.
 - Disable top-level statements.
-- Use Interactive Server / Global interactivity.
+- Use Interactive Server / Global interactivity for the dashboard.
 - Add initial project structure.
 - Add basic dashboard page.
 - Show empty dashboard states for missing Edge Units and rules.
 - Add app settings for messaging host/port.
 
-### Milestone 2: Messaging Connection
+### Milestone 2: Runtime Messaging Connection
 
 - Add MQTT client package.
-- Connect to Mosquitto.
-- Display connection status on dashboard.
-- Subscribe to inbound topics.
+- Connect the runtime host to Mosquitto.
+- Subscribe to inbound topics from the runtime host.
+- Persist or expose connection status through application state/query contracts.
+- Display connection status on dashboard when the dashboard is enabled.
 
 ### Milestone 3: Heartbeat Ingestion
 
@@ -1297,9 +1322,9 @@ Avoid:
 - Depend on abstractions from application/core code; infrastructure projects should realize those abstractions.
 - Do not let UI components, application services, or domain models depend directly on infrastructure libraries.
 - Avoid tight coupling in naming as well as dependencies.
-- Use technology-neutral names in core contracts. For example, prefer `IMessagingRepository` over `IMqttRepository`.
+- Use technology-neutral names in core contracts. For example, prefer `IMessagingService` over `IMqttService`.
 - Keep implementation-specific names and details inside the project that owns that implementation. For example, MQTTnet types and MQTT-specific details belong in `Greenhouse.Mqtt`; storage-provider details belong in `Greenhouse.Storage`; UI-framework details belong in `Greenhouse.UI`.
-- Avoid redundant names within any project or namespace. For example, in `Greenhouse.Mqtt`, prefer names like `Repository`, `CommandPublisher`, and `ConnectedService` rather than `MqttRepository`, `MqttCommandPublisher`, or `MqttConnectedService`.
+- Avoid redundant names within any project or namespace. For example, in `Greenhouse.Mqtt`, prefer names like `MessagingService` or `MessageTransport` rather than `MqttMessagingService` unless multiple messaging transports exist in the same namespace.
 - Add a technology prefix only when it removes real ambiguity or distinguishes multiple implementations in the same namespace.
 
 ---
@@ -1445,7 +1470,7 @@ When coding against the current project docs, normalize the following minor inco
 The first useful deliverable should be:
 
 ```text
-A Blazor dashboard running on the Raspberry Pi that shows live MQTT heartbeat messages from ESP32 devices and records/upserts those devices into the Main Unit's device registry.
+A Main Unit runtime running on the Raspberry Pi that ingests MQTT heartbeat messages from ESP32 devices, records/upserts those devices into the Main Unit device registry, and exposes that state to an optional Blazor dashboard.
 ```
 
 Do not begin with full automation rules, OTA, AI, authentication, cloud sync, or mobile apps.
