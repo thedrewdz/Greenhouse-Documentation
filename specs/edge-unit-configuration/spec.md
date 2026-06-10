@@ -11,11 +11,13 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 ## Preconditions and Assumptions
 
 - Main Unit setup is complete.
-- The Main Unit can scan for advertising Edge Units and pair over BLE.
+- The Main Unit backend can scan for advertising Edge Units and pair over BLE.
 - Unprovisioned Edge Units can enter Provisioning Mode and advertise over BLE.
 - The Main Unit receives runtime heartbeats on `gh/heartbeat` after onboarding.
 - The Main Unit is the source of truth for runtime configuration and slot mapping.
 - Edge Units do not persist long-term runtime configuration in Phase 1 beyond the accepted provisioning values required by the BLE onboarding contract.
+- The web UI is a thin client that starts, cancels, and observes onboarding/reconfiguration through backend API resources.
+- Phase 1 has one active Edge Unit onboarding workflow per Main Unit backend. Separate onboarding sessions for multiple UI instances are not required.
 
 ## Definitions and Canonical Terms
 
@@ -36,21 +38,44 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 
 ### First-Time Onboarding
 
-- When the user starts Add Edge Unit, begin BLE scanning and show guidance to power on an Edge Unit and place it in Provisioning Mode.
-- Keep scanning until timeout, cancellation, or discovery.
-- If the user navigates away, stop BLE scanning immediately.
-- If no Edge Unit is discovered before timeout, show a clear no-device state with a Restart action.
-- When a device is discovered, show a selectable list with device identity and signal quality.
-- After pairing succeeds, collect onboarding input for Wi-Fi SSID, Wi-Fi password, MQTT broker URI, and optional heartbeat interval override.
-- When input is valid, send the provisioning payload required by the BLE onboarding contract.
-- If the Edge Unit rejects the payload, show explicit error details and allow retry.
-- If Wi-Fi or MQTT bootstrap fails after a valid payload, keep the selected device context and allow retry or cancellation.
+- When the user starts Add Edge Unit, the UI triggers the backend-owned onboarding workflow through the backend API.
+- The backend workflow begins BLE scanning and exposes onboarding status for the UI to display.
+- Keep scanning until timeout, explicit cancellation, or selected-device handoff.
+- If the user navigates away, the UI may stop observing the workflow, but navigation alone must not make the UI the owner of BLE cancellation. Explicit cancel actions must call the backend cancellation API.
+- If no Edge Unit is discovered before timeout, the backend marks onboarding as no-device-found and the UI shows a clear no-device state with a Restart action.
+- While scanning, the backend records each actively advertising Edge Unit as a discovered device candidate for the active onboarding workflow.
+- The UI requests the discovered device candidate list from the backend and displays candidates with identity and signal quality.
+- After the user selects a candidate, the UI sends the selected device to the backend onboarding resource.
+- The backend verifies that the selected device is an active candidate, then pairs with the selected Edge Unit and records pairing status.
+- The UI collects onboarding input for Wi-Fi SSID, Wi-Fi password, MQTT broker URI, and optional heartbeat interval override, then submits it to the backend onboarding resource.
+- When input is valid, the backend sends the provisioning payload required by the BLE onboarding contract.
+- If the Edge Unit rejects the payload, the backend records the error details and the UI displays retry guidance without redefining error semantics.
+- If Wi-Fi or MQTT bootstrap fails after a valid payload, the backend keeps the selected device context and exposes retry or cancellation actions.
 - If first-heartbeat publish fails after MQTT connect, treat it as MQTT bootstrap failure and apply the same bounded retry-budget behavior defined in [../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md), including fallback to BLE provisioning when the MQTT-stage retry budget is exhausted.
-- When the first valid heartbeat arrives from the selected device_id for the active onboarding session, persist that heartbeat as the current Edge Unit state and mark onboarding complete.
+- When the first valid heartbeat arrives from the selected device_id for the active onboarding workflow, the backend persists that heartbeat as the current Edge Unit state and marks onboarding complete.
 - A first heartbeat may also trigger subsequent runtime registration work, but for Phase 1 happy-path onboarding the flow completes at this point.
-- If no valid heartbeat arrives before the onboarding session timeout, mark onboarding failed and show a clear user-facing failure state.
+- If no valid heartbeat arrives before the onboarding timeout, the backend marks onboarding failed and the UI shows a clear user-facing failure state.
 - Main Unit does not auto-retry onboarding after timeout.
-- If the user selects Retry from the failure state, navigate to the Edge Unit onboarding view and restart BLE scanning as a new onboarding session.
+- If the user selects Retry from the failure state, the UI triggers the backend-owned onboarding workflow again.
+
+### UI / Backend Interaction
+
+- UI-to-backend interactions must use RESTful API resources.
+- API calls must be stateless; the request path, selected `device_id`, action, and request payload must carry the context needed for each request.
+- Mutating workflow calls must be idempotent from the UI client's point of view. Repeating the same `start`, `provision`, or `cancel` request for the same active unit must return the current onboarding state rather than duplicate BLE work.
+- The UI must not call BLE adapters, MQTT adapters, repositories, or application services directly.
+- The UI may poll the onboarding resource for discovered devices and workflow status.
+- A socket-based read channel may be added for progress updates, but the backend remains the durable source of truth and state-changing actions still use REST resources.
+
+Example resource shapes:
+
+```text
+GET /api/onboarding
+POST /api/onboarding/scan
+POST /api/onboarding/{device_id}/start
+POST /api/onboarding/{device_id}/provision
+POST /api/onboarding/{device_id}/cancel
+```
 
 ### Runtime Registration and Slot Mapping
 
@@ -69,7 +94,7 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 - The BLE provisioning payload shape and field-level validation rules live in [../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md).
 - The BLE provisioning response shape and canonical onboarding error code set live in [../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md).
 - This spec uses that contract as the provisioning boundary and focuses on the user-facing orchestration around it.
-- Main Unit onboarding UI should map returned error_code values directly to user-facing retry guidance without redefining code semantics locally.
+- Main Unit backend should map returned BLE `error_code` values to canonical onboarding status details. The UI should display those details without redefining code semantics locally.
 
 ### Runtime Configuration Publish Contract (Main Unit to Edge Unit)
 
@@ -201,7 +226,7 @@ If local validation fails:
 
 ### Performance
 
-- BLE scan startup after user selects Add Edge Unit must begin within 2 seconds.
+- BLE scan startup after the UI triggers onboarding scan must begin within 2 seconds.
 - No-device discovery timeout must be 30 seconds per scan session.
 - Onboarding session timeout waiting for first valid heartbeat must be 90 seconds from provisioning payload acceptance.
 - Runtime configuration publish-to-ack latency target is 3 seconds or less under normal LAN conditions.
@@ -222,18 +247,23 @@ If local validation fails:
 
 ## Acceptance Criteria
 
-1. Given a new unprovisioned Edge Unit in Provisioning Mode, when user starts Add Edge Unit, then BLE scanning starts within 2 seconds and discovered devices are listed with identity and signal quality.
-2. Given no advertising Edge Unit, when scan session reaches 30 seconds, then Main Unit shows a no-device state with Restart and does not keep scanning in background.
-3. Given valid onboarding input and accepted provisioning payload, when first valid heartbeat from selected `device_id` arrives within 90 seconds, then onboarding is marked complete and heartbeat state is persisted.
-4. Given onboarding input rejected by BLE provisioning validation, when Edge Unit returns non-zero onboarding `error_code`, then Main Unit shows explicit error details and allows retry without losing selected device context.
-5. Given first heartbeat from a device with no stored runtime mapping, when user submits valid mapping input, then Main Unit publishes configuration on `ghcfg/wr-{device_id}` with required schema fields.
-6. Given runtime configuration publish, when Edge Unit returns ack on `ghcfg/ack-{device_id}`, then ack has matching `message_id`, `device_id`, and `mapping_version` and result is processed exactly once.
-7. Given runtime configuration ack timeout, when fewer than 3 attempts have been sent, then Main Unit retries with same `message_id` and `mapping_version`; on third timeout it enters failure state with retry/cancel actions.
-8. Given invalid runtime mapping form input, when user attempts submit, then Main Unit blocks publish, shows field-level validation errors, and preserves form values.
-9. Given runtime-configuration error codes `3001`, `3002`, `3003`, `3004`, or `3099`, when ack is received with `result=error`, then Main Unit behavior follows the deterministic handling defined in this spec.
-10. Given topology drift for known device, when mismatch is detected from heartbeat, then reconfiguration prompt appears within 5 seconds and prior acknowledged mapping remains active until new mapping is acknowledged as success.
-11. Given reconfiguration dialog open and a new heartbeat with changed topology, when drift snapshot changes, then draft is marked stale and user must reload from latest topology before submit.
-12. Given accepted runtime mapping update, when persistence occurs, then mapping write is atomic and no partial mapping state is observable.
+1. Given a new unprovisioned Edge Unit in Provisioning Mode, when the UI triggers backend onboarding scan, then backend BLE scanning starts within 2 seconds and `GET /api/onboarding` exposes discovered devices with identity and signal quality.
+2. Given no advertising Edge Unit, when scan reaches 30 seconds, then backend onboarding state becomes no-device-found, the UI shows Restart, and the backend does not keep scanning.
+3. Given multiple advertising Edge Units are discovered during active onboarding scan, when the UI requests `GET /api/onboarding`, then the backend returns all currently active candidates with identity and signal quality.
+4. Given the UI submits `POST /api/onboarding/{device_id}/start`, when that `device_id` is still an active candidate, then the backend pairs with that Edge Unit and records selected-device status.
+5. Given valid onboarding input submitted to `POST /api/onboarding/{device_id}/provision` and accepted provisioning payload, when first valid heartbeat from selected `device_id` arrives within 90 seconds, then onboarding is marked complete and heartbeat state is persisted.
+6. Given onboarding input rejected by BLE provisioning validation, when Edge Unit returns non-zero onboarding `error_code`, then backend onboarding status exposes explicit error details and allows retry without losing selected device context.
+7. Given first heartbeat from a device with no stored runtime mapping, when user submits valid mapping input, then Main Unit publishes configuration on `ghcfg/wr-{device_id}` with required schema fields.
+8. Given runtime configuration publish, when Edge Unit returns ack on `ghcfg/ack-{device_id}`, then ack has matching `message_id`, `device_id`, and `mapping_version` and result is processed exactly once.
+9. Given runtime configuration ack timeout, when fewer than 3 attempts have been sent, then Main Unit retries with same `message_id` and `mapping_version`; on third timeout it enters failure state with retry/cancel actions.
+10. Given invalid runtime mapping form input, when user attempts submit, then Main Unit blocks publish, shows field-level validation errors, and preserves form values.
+11. Given runtime-configuration error codes `3001`, `3002`, `3003`, `3004`, or `3099`, when ack is received with `result=error`, then Main Unit behavior follows the deterministic handling defined in this spec.
+12. Given topology drift for known device, when mismatch is detected from heartbeat, then reconfiguration prompt appears within 5 seconds and prior acknowledged mapping remains active until new mapping is acknowledged as success.
+13. Given reconfiguration dialog open and a new heartbeat with changed topology, when drift snapshot changes, then draft is marked stale and user must reload from latest topology before submit.
+14. Given accepted runtime mapping update, when persistence occurs, then mapping write is atomic and no partial mapping state is observable.
+15. Given the UI refreshes, disconnects, or navigates away during onboarding, when `GET /api/onboarding` is requested again, then the current backend-owned onboarding state is returned without relying on UI memory.
+16. Given the UI repeats a mutating onboarding request for the same `device_id` and action, when the backend has already accepted that action, then the backend returns the current onboarding state without duplicating BLE scan, pairing, provisioning, or cancellation work.
+
 ## Deferred Work
 
 - Full production PKI and certificate lifecycle.

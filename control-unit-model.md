@@ -19,7 +19,8 @@ The Main Unit is the local-first brain of the greenhouse automation platform. It
 The current preferred implementation is:
 
 - **Main Unit runtime host decoupled from the web UI**
-- **ASP.NET Core Blazor Web App for the optional local dashboard**
+- **Backend API exposed by the Main Unit backend**
+- **Thin ASP.NET Core Blazor Web App for the optional local dashboard**
 - **Interactive Server render mode for the dashboard when enabled**
 - **Global interactivity for the dashboard when enabled**
 - **No authentication initially**
@@ -67,6 +68,8 @@ Recommended projects:
 ```text
 Greenhouse.Runtime
 Greenhouse.Runtime.Tests
+Greenhouse.Api
+Greenhouse.Api.Tests
 Greenhouse.UI
 Greenhouse.UI.Tests
 Greenhouse.Core
@@ -105,22 +108,26 @@ Responsibilities:
 
 #### `Greenhouse.UI`
 
-Optional ASP.NET Core Blazor Web App.
+Optional thin ASP.NET Core Blazor Web App.
 
 Responsibilities:
 
 - Host the web dashboard.
-- Host API endpoints if needed.
-- Register presentation services and application-client dependencies.
+- Register UI presentation services and backend API clients.
 - Provide the local appliance UI.
 - Support future kiosk-mode browser usage.
-- Display state from application queries and initiate user-driven use cases through application commands.
+- Display state returned by backend API calls.
+- Initiate user-driven use cases through backend API calls.
+- Poll backend status resources or connect to documented realtime read channels for workflow progress.
 
 Must not:
 
 - Own automation state, topology state, or persisted Main Unit state.
 - Be required for MQTT subscriptions, telemetry ingestion, heartbeat processing, automation scheduling, command dispatch, retries, or persistence.
 - Register lifecycle-critical background services only in the UI host.
+- Host backend API endpoints.
+- Call application services, repositories, BLE adapters, MQTT adapters, or database contexts directly.
+- Own BLE onboarding or Edge Unit reconfiguration workflow state.
 
 Use:
 
@@ -131,6 +138,24 @@ Interactivity location: Global
 Authentication: None
 Top-level statements: disabled
 ```
+
+#### `Greenhouse.Api`
+
+Backend API presentation host.
+
+Responsibilities:
+
+- Expose RESTful API endpoints over Main Unit application contracts.
+- Validate API request DTOs and translate them into application commands or queries.
+- Return resource representations, operation status, validation errors, and workflow state.
+- Expose onboarding and reconfiguration workflow resources owned by backend services.
+- Optionally expose a documented realtime read channel for progress updates.
+
+Must not:
+
+- Store per-client request state required by later API calls.
+- Put business rules in controllers or endpoint handlers.
+- Depend on UI framework types.
 
 #### `Greenhouse.Core`
 
@@ -199,7 +224,7 @@ The Main Unit handles:
 - Actuator command dispatch.
 - Historical persistence.
 - Web dashboard.
-- Web API.
+- Backend REST API.
 - Automation rules.
 - Alerts and notifications.
 - OTA coordination later.
@@ -221,9 +246,11 @@ For Phase 1, prioritize:
 
 ## Blazor Web App Instructions
 
-Use a Blazor Web App with Interactive Server rendering.
+Use a thin Blazor Web App for the dashboard.
 
 The dashboard is intended to run in Chromium kiosk mode on the Raspberry Pi, but it should also work from a desktop browser on the same LAN.
+
+The Blazor app runs separately from the backend. It calls backend API endpoints and renders the returned state. It must not reference backend implementation projects or invoke application services directly.
 
 Design UI components for touch use:
 
@@ -256,6 +283,39 @@ Suggested first dashboard widgets:
 - Recent telemetry messages.
 - Recent command acknowledgements.
 - Fault summary.
+
+## Backend API Instructions
+
+Expose UI-facing capabilities through backend REST API endpoints.
+
+API rules:
+
+- Requests must be stateless: each request must contain the identifiers and payload needed to process it without relying on per-client request memory.
+- Mutating calls must be idempotent from the UI client's point of view. Repeating `start`, `cancel`, or `provision` for the same active unit must return the current backend state rather than duplicate work.
+- Long-running operations must return or update backend-owned resource state rather than keeping progress in the UI.
+- Response bodies should be resource representations or operation status DTOs.
+- API handlers should call application commands/queries and should not own business policy.
+
+Examples of resource-oriented API shapes:
+
+```text
+GET /api/runtime/status
+GET /api/edge-units
+GET /api/edge-units/{device_id}
+GET /api/onboarding
+POST /api/onboarding/scan
+POST /api/onboarding/{device_id}/start
+POST /api/onboarding/{device_id}/provision
+POST /api/onboarding/{device_id}/cancel
+```
+
+Polling is acceptable for Phase 1 workflow progress:
+
+```text
+GET /api/onboarding
+```
+
+A socket-based read channel may be added when polling becomes awkward or wasteful. If added, it must be observational only: the backend still owns durable workflow state, and state-changing actions still go through REST resources.
 
 ---
 
@@ -884,7 +944,7 @@ Bad messages should be logged and ignored or recorded as malformed events by the
 
 ## Application Services
 
-Create application services rather than placing logic in Blazor components.
+Create application services behind the backend API rather than placing logic in Blazor components or API endpoint handlers.
 
 Suggested services:
 
@@ -903,8 +963,9 @@ public interface ITelemetryService
 }
 ```
 
-- Blazor components should call these services. 
-- They should not directly publish MQTT messages or manipulate storage.
+- Backend API handlers should call these services through application commands or queries.
+- Blazor components should call backend APIs and must not call these services directly.
+- UI and API code should not directly publish MQTT messages or manipulate storage.
 - Concrete implementation of these services should be injected using inversion of control - IoC
 - Do not use a service locator pattern, eg: `get<TService>();`
 
@@ -939,16 +1000,18 @@ Routing separation:
 - Main general configuration exists and heartbeat reports topology drift for known Edge Unit: route to Edge Unit Reconfiguration Flow.
 - Main general configuration exists and no onboarding/reconfiguration condition is active: route to normal dashboard experience.
 
-Keep setup implementation aligned with Clean Architecture:
+Keep setup, onboarding, and reconfiguration implementation aligned with Clean Architecture:
 
-- Blazor components should collect user input and display state only.
-- Main setup and Edge Unit onboarding components should call application services or use cases.
-- Application services should coordinate validation, persistence, and operating-system integration.
-- Network setup should be initiated through an `INetworkService` abstraction, not directly from UI components.
+- Blazor components should collect user input and display backend API state only.
+- Main setup and Edge Unit onboarding components should call backend APIs, not application services or use cases directly.
+- Backend API handlers should call application services or use cases.
+- Application services should coordinate validation, persistence, BLE operations, MQTT operations, and operating-system integration.
+- Network setup should be initiated through backend APIs backed by an `INetworkService` abstraction, not directly from UI components.
 - `INetworkService` is the application boundary for network status, connection attempts, and future network events or network changes.
 - Domain/configuration models should live outside the UI project.
 - Storage implementation details should stay behind repository or persistence abstractions.
 - Do not put setup or onboarding persistence logic directly in Blazor components.
+- Do not put BLE scan, pairing, provisioning, heartbeat waiting, timeout, retry, or cancellation logic directly in Blazor components.
 - Do not hard-code setup state, onboarding state, or general configuration in MQTT handlers.
 
 General configuration may be represented by a model such as `MainConfig`.
@@ -1369,7 +1432,8 @@ Phase 1 deployment should be simple:
 - Build/publish from development machine or directly on Pi.
 - Run as a .NET app on Raspberry Pi Debian Bookworm.
 - Mosquitto runs as a system service.
-- ASP.NET Core app eventually runs as a systemd service.
+- Main Unit backend eventually runs as a systemd service.
+- Thin Blazor UI may run as a separate local web app or static/web-hosted client.
 - Chromium can later launch in kiosk mode pointed at the local dashboard.
 
 Do not require Docker for the first working version.
@@ -1388,7 +1452,7 @@ Future deployment may use:
 
 The appliance-like interface will eventually run in a browser on the Pi display.
 
-The ASP.NET Core app should serve the dashboard locally, for example:
+The thin Blazor UI should serve the dashboard locally, for example:
 
 ```text
 http://localhost:5000

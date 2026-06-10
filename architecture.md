@@ -11,6 +11,7 @@ For physical deployment, hardware makeup, host choices, Edge Unit makeup, and op
 - Keep automation local-first and deterministic.
 - Keep domain policy independent from UI, storage, MQTT, hardware drivers, and future cloud or AI adapters.
 - Keep the configured Main Unit able to run headless, without starting or serving the web UI.
+- Keep the web UI deployable and runnable separately from the backend runtime.
 - Preserve MQTT-centered integration while preventing transport details from leaking into domain behavior.
 - Make contracts explicit and testable before implementation.
 - Keep Main Unit setup, network recovery, Edge Unit onboarding, and Edge Unit reconfiguration as separate workflows.
@@ -27,9 +28,13 @@ The Main Unit is the local system authority for software orchestration:
 - exposes local UI and API surfaces
 - coordinates Edge Unit onboarding and reconfiguration workflows
 
-The web UI is optional for normal operation after Main Unit setup is complete. A configured Main Unit must be able to start its runtime services, load persisted state, process MQTT traffic, evaluate automation rules, dispatch commands, and maintain state without a browser session, web dashboard, or presentation host being active.
+The web UI is optional for normal operation after Main Unit setup is complete. A configured Main Unit must be able to start its runtime services, load persisted state, process MQTT traffic, evaluate automation rules, dispatch commands, maintain state, and expose backend API surfaces without a browser session or web dashboard being active.
 
-The UI and API are presentation clients of the Main Unit application contracts. They may display state and initiate user-driven use cases, but they must not own automation state, lifecycle-critical subscriptions, scheduling loops, or persistence authority.
+The web UI is a thin Blazor client. It must run separately from the backend runtime and interact with the backend only through backend-exposed API calls or explicitly documented realtime read channels.
+
+Backend API endpoints are presentation adapters over Main Unit application contracts. API calls may display state and initiate user-driven use cases, but they must not store request-local workflow state that is required by later requests. Underlying backend services may be stateful; UI-facing API calls must remain stateless and idempotent from the client's point of view.
+
+The web UI must not own automation state, onboarding/reconfiguration workflow state, lifecycle-critical subscriptions, scheduling loops, BLE sessions, MQTT connections, or persistence authority.
 
 Edge Unit firmware is a cooperating distributed endpoint. It publishes telemetry and heartbeat data, accepts commands, reports state, and enforces local failsafe behavior. Firmware-specific contracts live in [device-model.md](device-model.md), [mqtt-topics.md](mqtt-topics.md), and relevant specs.
 
@@ -40,7 +45,7 @@ Use inward dependency direction:
 1. Domain: greenhouse concepts, automation rules, invariants, and state transitions.
 2. Application: use cases, workflow orchestration, ports, and transaction boundaries.
 3. Infrastructure: MQTT, persistence, BLE, hardware adapters, OS services, and external integrations.
-4. Presentation: web UI, API endpoints, screens, view models, and user interaction flows.
+4. Presentation: thin web UI, backend API endpoints, screens, view models, and user interaction flows.
 
 Outer layers may depend on inner layers. Inner layers must not depend on outer-layer implementations.
 

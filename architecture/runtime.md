@@ -14,7 +14,7 @@ Runtime responsibilities include:
 - Topology/state tracking.
 - Automation rule evaluation.
 - Command dispatch.
-- UI/API request handling when presentation is enabled.
+- Backend API request handling when enabled.
 - Onboarding and reconfiguration workflow coordination.
 
 ## Headless Operation
@@ -30,7 +30,26 @@ In headless operation, the Main Unit must still:
 - persist telemetry, liveness snapshots, audit-relevant command history, and state changes
 - recover bounded offline buffers according to documented retry and retention rules
 
-UI/API request handling is not a prerequisite for these runtime responsibilities.
+Web UI availability is not a prerequisite for these runtime responsibilities. Backend API availability may be enabled for local clients, but API request handling must not be required for automation loops, MQTT handling, command dispatch, persistence, or workflow recovery.
+
+## Backend API Runtime
+
+The backend API is part of the Main Unit backend, not part of the Blazor web UI.
+
+The backend API exposes RESTful resources for:
+
+- current runtime state
+- Edge Unit registration and topology
+- telemetry and liveness summaries
+- command requests and command history
+- onboarding and reconfiguration workflow state resources
+- setup and network recovery workflow resources where applicable
+
+API handlers should be short-lived request handlers that validate input, call application use cases, and return resource representations or operation status. They must not own long-lived workflow state directly.
+
+Long-lived workflow state belongs to backend application/runtime services and persistence. For example, Edge Unit onboarding owns BLE scanning, discovered Edge Unit candidates, selected-device handoff, pairing, provisioning, heartbeat waiting, timeout handling, cancellation, and final completion state in backend services. The UI starts or cancels onboarding through API calls and observes onboarding state through polling or an explicitly documented realtime read channel.
+
+If a realtime channel is introduced, it must be treated as a read/progress channel. Durable state changes still go through backend application use cases and must remain recoverable from backend state.
 
 ## Message Handling
 
@@ -70,7 +89,7 @@ Background services may own:
 
 Background services should delegate decisions to application/domain services instead of owning business policy directly.
 
-Lifecycle-critical background services must be registered with the Main Unit runtime host, not only with the web UI host. A presentation host may observe or invoke the runtime through application contracts, but stopping the presentation host must not stop automation, MQTT handling, command dispatch, or persistence.
+Lifecycle-critical background services must be registered with the Main Unit runtime host, not with the web UI host. The backend API may invoke application contracts, and the web UI may observe or request changes through backend API calls, but stopping the web UI must not stop automation, MQTT handling, command dispatch, onboarding workflows, or persistence.
 
 ## Workflow Separation
 

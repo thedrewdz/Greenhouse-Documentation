@@ -116,6 +116,35 @@ For canonical guidance, use:
 	- Optional: add a short status decision matrix to `roles/*.md` files for quick operator reference.
 	- Optional: seed one live dossier under `specs/<spec-name>/spec.md` with the new Spec Control section as an example migration.
 
+### Session Addendum (UI-Independent Backend and Onboarding API)
+
+- Date: 2026-06-10
+- Owner: Codex documentation session
+- Goal: Clarify that the Main Unit backend runs independently from the web UI and that the UI is a thin Blazor client over backend REST APIs.
+- Completed:
+	- Updated architecture docs to require a headless-capable Main Unit runtime that can maintain state, process MQTT, dispatch commands, and expose backend APIs without the web UI running.
+	- Split UI and backend responsibilities:
+		- `Greenhouse.Runtime` owns long-lived runtime services.
+		- `Greenhouse.Api` exposes backend REST API endpoints.
+		- `Greenhouse.UI` is a thin Blazor dashboard that calls backend APIs and does not host API endpoints or lifecycle-critical services.
+	- Documented REST expectations for UI-facing calls:
+		- requests are stateless
+		- repeated mutating calls must not duplicate backend work
+		- backend services may be stateful, but state is exposed as backend-owned resources
+	- Added `IMessagingService` as the generic, message-content-agnostic runtime messaging abstraction.
+	- Refactored Edge Unit onboarding documentation so the backend owns BLE scan, discovered-device candidates, selected-device handoff, provisioning, heartbeat wait, timeout, cancellation, and completion.
+	- Simplified onboarding API examples away from session identifiers:
+		- `GET /api/onboarding`
+		- `POST /api/onboarding/scan`
+		- `POST /api/onboarding/{device_id}/start`
+		- `POST /api/onboarding/{device_id}/provision`
+		- `POST /api/onboarding/{device_id}/cancel`
+	- Preserved Edge Unit credential persistence behavior: accepted provisioning values are persisted after valid BLE payload acceptance.
+- Blockers: none.
+- Next actions:
+	- Decide whether a socket-based read channel is needed after the polling-based Phase 1 API is implemented.
+	- When implementation begins, ensure UI code does not reference backend implementation projects, BLE adapters, MQTT adapters, repositories, or application services directly.
+
 ## Template
 
 Use this structure for future session entries:

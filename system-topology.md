@@ -87,14 +87,14 @@ The Main Unit handles:
 - automation rules
 - telemetry ingestion
 - historical persistence
-- optional web UI
-- optional web API
+- optional thin web UI
+- backend REST API
 - notifications
 - OTA coordination
 - AI orchestration
 - future cloud synchronization
 
-After setup is complete, the Main Unit runtime must be able to start and operate without the web UI. The automation engine, MQTT handling, command dispatch, and persisted state remain backend/runtime responsibilities.
+After setup is complete, the Main Unit runtime must be able to start and operate without the web UI. The automation engine, MQTT handling, command dispatch, backend REST API, and persisted state remain backend/runtime responsibilities.
 
 Onboarding and provisioning responsibilities:
 - host BLE onboarding service for unprovisioned Edge Units

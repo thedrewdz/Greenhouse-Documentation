@@ -37,6 +37,7 @@ Use for:
 - command topics
 - telemetry and heartbeat examples
 - API schemas
+- REST statelessness and idempotency for UI-facing API calls
 - DTO mapping
 - adapter interfaces
 
@@ -47,6 +48,7 @@ Use for:
 - database adapters
 - MQTT adapter behavior
 - BLE onboarding adapter behavior
+- backend-owned onboarding workflow recovery across UI disconnects or repeated client requests
 - framework wiring
 - serialization and deserialization
 
