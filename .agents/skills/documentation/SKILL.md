@@ -1,10 +1,13 @@
-# Skill: Documentation Agent
+---
+name: documentation
+description: Use this skill when creating, refining, aligning, or reviewing Greenhouse documentation, specifications, canonical docs, glossary terms, implementation-ready requirements, acceptance criteria, or plan interrogation for ambiguous requirements.
+---
 
-Used by role: [../roles/documentation-agent.md](../roles/documentation-agent.md)
-
-## Purpose
+# Documentation Skill
 
 Produce complete, detailed, consistent, and concise documentation that is easy for humans to read and reliable for downstream code-generation agents.
+
+Used by custom agent: [../../../.codex/agents/documentation-agent.toml](../../../.codex/agents/documentation-agent.toml)
 
 ## Output Artifact Contract
 
@@ -13,19 +16,6 @@ Produce complete, detailed, consistent, and concise documentation that is easy f
 - Create or update canonical milestone status at `specs/<spec-name>/status.md` from `templates/spec-canonical-status.md`.
 - Consume promoted artifacts that the Retrospective Agent copied from `.agent-output/specs/<spec-name>/` in implementation repositories.
 - If an expected artifact is not required for the task, create it with `Not required` and a concrete reason.
-
-## Use This Skill When
-
-- Creating new technical documentation from product or architecture requirements.
-- Refining draft docs that are unclear, inconsistent, or incomplete.
-- Aligning multiple documents into a single coherent source of truth.
-- Preparing specifications that another agent will implement in code.
-
-## Do Not Use This Skill When
-
-- The task is pure code implementation without documentation changes.
-- The request is exploratory brainstorming with no defined scope.
-- A one-line note or temporary scratch text is sufficient.
 
 ## Documentation Standards
 
@@ -36,12 +26,13 @@ Produce complete, detailed, consistent, and concise documentation that is easy f
 - Make requirements testable: include acceptance criteria where relevant.
 - Separate current behavior from future intent.
 - Mark deferred items explicitly so they are not misread as in-scope.
+- For recurring integration message traffic, such as heartbeat, document cross-cutting runtime handling explicitly and require a shared messaging abstraction contract, such as `register(channel, callback)`, instead of feature-lifecycle-specific application service splits.
 
-## Plan Interrogation Method (Core)
+## Plan Interrogation Method
 
 Use this method whenever a user provides a plan, direction, architecture, or requirements set.
 
-- Interview the user relentlessly about every relevant aspect until shared understanding is reached.
+- Interview the user about every relevant aspect until shared understanding is reached.
 - Walk each branch of the design tree and resolve dependencies between decisions one by one.
 - For each question asked, provide a recommended answer.
 - Ask questions one at a time and wait for user feedback before asking the next question.
@@ -57,21 +48,21 @@ Use this method whenever a user provides a plan, direction, architecture, or req
 
 For every question, include:
 
-- why the question matters
-- a recommended default answer based on current evidence
-- what would change if the user chooses a different answer
+- Why the question matters.
+- A recommended default answer based on current evidence.
+- What would change if the user chooses a different answer.
 
 ## Required Structure for Spec-Style Docs
 
 1. Purpose and scope.
 2. Preconditions and assumptions.
 3. Definitions and canonical terms.
-4. Behavior and workflows.
+4. Behavior and workflows, including cross-cutting runtime workflow ownership where applicable, such as long-lived channel or topic subscriptions.
 5. Data contracts and schemas.
 6. Validation rules and error handling.
-7. Non-functional constraints (performance, safety, security).
+7. Non-functional constraints: performance, safety, security.
 8. Acceptance criteria.
-9. Out-of-scope / deferred work.
+9. Out-of-scope or deferred work.
 10. Open questions.
 
 ## Style Rules
@@ -92,8 +83,8 @@ For every question, include:
 
 ## Workflow
 
-1. Read all in-scope docs and identify conflicts, gaps, and duplicates.
-2. Pull latest remote changes (`git pull --ff-only`) and stop on conflicts.
+1. Read `DOCS-MAP.md`, then read all in-scope docs identified by the map and task context.
+2. Pull latest remote changes with `git pull --ff-only` and stop on conflicts.
 3. Check `.agent-output/specs/<spec-name>/` for incoming artifacts before commencing.
 4. Read canonical status from `specs/<spec-name>/status.md`.
 5. Read execution status from `.agent-output/specs/<spec-name>/spec-status.md` when available.
@@ -103,19 +94,15 @@ For every question, include:
 9. Create or update `specs/<spec-name>/spec.md` using `templates/spec.md` when behavior contracts change.
 10. Rewrite sections to be explicit, testable, and implementation-ready.
 11. Add examples and acceptance criteria where missing.
-12. If needed, update `specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md` to close documented feedback loops.
+12. If needed, append to or resolve `specs/<spec-name>/doc-feedback.md` using `templates/doc-feedback.md` to close documented feedback loops.
 13. Run a final consistency pass across related documents.
 14. Record open questions and assumptions.
 15. Create or update `specs/<spec-name>/status.md` from `templates/spec-canonical-status.md`.
-16. Set canonical status in `status.md`:
-17. Set `ready-for-dev` when quality gate passes and no ambiguous implementation blockers remain.
-18. Keep or set `new` when drafting is incomplete.
-19. Set `blocked` when unresolved contradictions or missing required decisions prevent safe implementation.
-20. Set `in-dev` when execution status indicates implementation lifecycle activity.
-21. Append canonical Status History in `status.md`.
-22. Prepare implementation handoff summary.
+16. Set canonical status in `status.md`: `ready-for-dev` when quality gate passes and no ambiguous implementation blockers remain, `new` when drafting is incomplete, `blocked` when unresolved contradictions or missing required decisions prevent safe implementation, or `in-dev` when execution status indicates implementation lifecycle activity.
+17. Append canonical Status History in `status.md`.
+18. Prepare implementation handoff summary.
 
-## Quality Gate (Must Pass)
+## Quality Gate
 
 - Completeness: no critical missing behavior for the stated scope.
 - Consistency: no conflicting requirements across related docs.
@@ -125,14 +112,15 @@ For every question, include:
 - Implementability: another agent can build from this without guessing.
 - No ambiguous requirements remain for the next implementation step.
 - Acceptance criteria are testable.
-- Terminology is canonical and consistent with CONTEXT.md.
+- Terminology is canonical and consistent with `CONTEXT.md`.
 - Canonical status in `specs/<spec-name>/status.md` reflects current readiness and has a traceable history entry.
 
 ## Output Checklist
 
-- Updated document(s) with explicit scope and constraints.
+- Updated documents with explicit scope and constraints.
 - Updated canonical status at `specs/<spec-name>/status.md`.
-- Resolved conflict list (what changed and why).
-- Open questions list (only true blockers).
+- Resolved conflict list: what changed and why.
+- Accepted documentation feedback items resolved through durable docs, skills, templates, or workflow updates.
+- Open questions list containing only true blockers.
 - Optional follow-up patch suggestions for adjacent docs.
 - Updated artifacts remain in `specs/<spec-name>/` and conform to templates.

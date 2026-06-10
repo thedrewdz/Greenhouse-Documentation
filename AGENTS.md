@@ -24,30 +24,31 @@ Use this precedence order when instructions overlap:
 
 1. AGENTS.md (this file)
 2. CONTEXT.md
-3. skills/README.md and skills/*.md
-4. adr/*.md
-5. Canonical docs for touched areas
-6. agent-handoff.md (session scratchpad only)
+3. DOCS-MAP.md
+4. .agents/skills/README.md and .agents/skills/*/SKILL.md
+5. workflows/*.md
+6. .codex/agents/*.toml
+7. adr/*.md
+8. Canonical docs for touched areas
+9. agent-handoff.md (session scratchpad only)
 
 If guidance conflicts, follow the highest-precedence source.
 
-## Always-Read Core Docs
+## Incremental Documentation Loading
+
+Always read:
 
 - CONTEXT.md
-- architecture.md
-- device-model.md
-- mqtt-topics.md
-- vision.md
+- DOCS-MAP.md
 - adr/README.md
+
+Then use DOCS-MAP.md to choose the smallest relevant set of architecture, workflow, spec, template, skill, and agent files for the task.
 
 Read ADR files relevant to touched areas:
 
 - adr/*.md
 
-Read area-specific docs when applicable:
-
-- control-unit-model.md
-- specs/README.md
+Read area-specific docs only when applicable.
 
 ## Repository Rules
 
@@ -64,11 +65,12 @@ Read area-specific docs when applicable:
 Use this workflow for documentation changes:
 
 1. Read CONTEXT.md and relevant ADRs first.
-2. Read the touched contracts/journeys/specs end-to-end.
-3. If direction is ambiguous, use skills/documentation-agent-skill.md Plan Interrogation Method and ask one question at a time with a recommended answer.
-4. Resolve terminology conflicts before adding new content.
-5. Update related docs in the same pass to prevent drift.
-6. Keep examples syntactically valid and copy-safe.
+2. Use DOCS-MAP.md to identify touched contracts, journeys, and specs.
+3. Read the touched contracts/journeys/specs end-to-end.
+4. If direction is ambiguous, use .agents/skills/documentation/SKILL.md Plan Interrogation Method and ask one question at a time with a recommended answer.
+5. Resolve terminology conflicts before adding new content.
+6. Update related docs in the same pass to prevent drift.
+7. Keep examples syntactically valid and copy-safe.
 
 ## Naming Rules
 

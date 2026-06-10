@@ -3,7 +3,7 @@
 ## Inputs Reviewed
 
 - Canonical spec: `specs/edge-unit-onboarding/spec.md` from Greenhouse Documentation.
-- Canonical docs: `AGENTS.md`, `CONTEXT.md`, `architecture.md`, `device-model.md`, `mqtt-topics.md`, `vision.md`.
+- Canonical docs: `AGENTS.md`, `CONTEXT.md`, `system-topology.md`, `architecture.md`, `device-model.md`, `mqtt-topics.md`, `vision.md`.
 - Local docs: `AGENTS.md`, `.github/copilot-instructions.md`, `docs/adr/0001-ble-first-onboarding.md`.
 - Code diff: `main...HEAD` on branch `spec/edge-unit-onboarding` at `e55d865`.
 - Test artifacts: `.agent-output/specs/edge-unit-onboarding/test-gap-report.md`.

@@ -2,6 +2,8 @@
 
 ## Item
 
+Append one `## Item` section per finding. Do not overwrite earlier findings from prior stages or prior implementation loops.
+
 ### Source
 
 - Repo:
@@ -22,9 +24,11 @@ What bad implementation, test gap, or review finding did this cause?
 
 - `CONTEXT.md`
 - `architecture.md`
+- `architecture/...`
+- `system-topology.md`
 - `mqtt-topics.md`
 - `specs/...`
-- `skills/...`
+- `.agents/skills/...`
 - `adr/...`
 
 ### Recommended Documentation Change

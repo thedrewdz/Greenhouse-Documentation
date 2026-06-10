@@ -16,5 +16,6 @@ Read and follow:
 
 - AGENTS.md
 - CONTEXT.md
-- skills/README.md
+- DOCS-MAP.md
+- .agents/skills/README.md
 

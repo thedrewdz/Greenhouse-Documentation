@@ -21,7 +21,7 @@ The implementation agent could not record the required status transitions withou
 ### Affected Docs
 
 - `specs/edge-unit-onboarding/spec.md`
-- `skills/implementation-agent-skill.md`
+- `.agents/skills/implementation/SKILL.md`
 - `templates/spec.md`
 
 ### Recommended Documentation Change
@@ -161,7 +161,7 @@ Implementation agents may complete code changes without producing the required l
 
 ### Affected Docs
 
-- `skills/implementation-agent-skill.md`
+- `.agents/skills/implementation/SKILL.md`
 
 ### Recommended Documentation Change
 
@@ -209,7 +209,7 @@ Implementation agents may accidentally leave feature work staged or committed on
 
 ### Affected Docs
 
-- `skills/implementation-agent-skill.md`
+- `.agents/skills/implementation/SKILL.md`
 
 ### Recommended Documentation Change
 

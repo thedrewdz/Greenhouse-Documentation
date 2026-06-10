@@ -1,14 +1,6 @@
-# Skill: QA Evaluation
-
-## Purpose
+# QA Evaluation
 
 Run a QA-focused evaluation pass on implemented features to validate scenario behavior, resilience, and acceptance criteria.
-
-## Use This Skill When
-
-- A feature is implemented and ready for scenario validation.
-- You need a release-readiness check beyond unit and integration tests.
-- You want a fourth-agent QA pass in the feedback loop.
 
 ## QA Evaluation Scope
 
@@ -39,4 +31,3 @@ When QA finds repeated ambiguity across scenarios:
 - Propose updates to specs and spec dossiers.
 - Route issues to documentation agent for clarification.
 - Re-run QA checks after docs and code are updated.
-

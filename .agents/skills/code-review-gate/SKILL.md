@@ -1,14 +1,11 @@
-# Skill: Code Review Gate
+---
+name: code-review-gate
+description: Use this skill when performing a strict review gate for non-trivial code changes, validating correctness, contract compliance, architecture boundaries, dependency direction, test adequacy, recurring message handling, and actionable blocking or non-blocking feedback.
+---
 
-## Purpose
+# Code Review Gate Skill
 
 Provide a strict review gate for non-trivial code changes before they are accepted.
-
-## Use This Skill When
-
-- Reviewing any non-trivial code change produced by another agent.
-- Validating design boundaries, contract-first compliance, and dependency management practices.
-- Producing actionable feedback for a documentation update loop.
 
 ## Review Focus Order
 
@@ -18,7 +15,7 @@ Provide a strict review gate for non-trivial code changes before they are accept
 4. Dependency management and hidden-coupling anti-patterns.
 5. Test coverage and missing negative-path tests.
 
-## Architectural Principles (Mandatory)
+## Architectural Principles
 
 Apply these principles on every non-trivial review:
 
@@ -30,7 +27,7 @@ Apply these principles on every non-trivial review:
 
 If layer ownership is unclear, treat it as a blocking documentation gap and file a documentation feedback item.
 
-## Architecture Boundary Checks (Required Evidence)
+## Architecture Boundary Checks
 
 Confirm and record evidence for the following:
 
@@ -39,15 +36,18 @@ Confirm and record evidence for the following:
 - Infrastructure implementations remain in infrastructure modules only.
 - No direct transport, persistence, or framework client calls are added to presentation-layer orchestration.
 - Dependency direction still points inward.
+- Recurring integration message streams are handled through a shared messaging abstraction instead of lifecycle-scoped application services.
 
-## Never Events (Auto-Blocking Examples)
+## Never Events
 
-Use these as concrete blocking examples of principle violations:
+Treat these examples as automatically blocking:
 
 - Infrastructure implementation class placed in a presentation-layer project or folder.
 - Presentation-layer class directly constructing or importing infrastructure implementation types.
 - Domain or application logic depending on infrastructure implementation namespaces.
 - Contract changes introduced in code without corresponding canonical documentation updates.
+- Lifecycle-scoped services, such as setup-only services, owning recurring heartbeat ingestion.
+- Feature-specific application services directly subscribing to transport channels or topics instead of using a shared messaging abstraction.
 
 ## Mandatory Checks
 
@@ -56,6 +56,7 @@ Use these as concrete blocking examples of principle violations:
 - No infrastructure leakage into domain abstractions.
 - Dependencies are explicit and testable.
 - Error, retry, and degraded-state paths are handled deterministically.
+- Long-lived channel or topic subscriptions, such as heartbeat, are wired via shared abstraction and remain active for process lifetime.
 - No never events are present.
 
 ## Review Output Format
@@ -79,4 +80,3 @@ When a review finds a never event or repeated boundary violation:
 - File a documentation feedback item marked `systemic`.
 - Propose a concrete update to one or more of: skills, templates, workflow rules.
 - Require retrospective stage to confirm the prevention update was completed.
-

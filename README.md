@@ -21,22 +21,23 @@ Recommended read order:
 
 1. [AGENTS.md](AGENTS.md)
 2. [CONTEXT.md](CONTEXT.md)
-3. [architecture.md](architecture.md)
-4. [device-model.md](device-model.md)
-5. [mqtt-topics.md](mqtt-topics.md)
-6. [vision.md](vision.md)
+3. [DOCS-MAP.md](DOCS-MAP.md)
+4. [adr/README.md](adr/README.md)
 
-All other documentation files in this repo are listed below and reachable from this index.
+Use DOCS-MAP.md to choose the smallest relevant set of documentation files for the task.
 
 ## Canonical Policy And Context
 
 - [AGENTS.md](AGENTS.md)
+- [CLAUDE.md](CLAUDE.md)
 - [CONTEXT.md](CONTEXT.md)
+- [DOCS-MAP.md](DOCS-MAP.md)
 - [.github/copilot-instructions.md](.github/copilot-instructions.md)
 
 ## Core Platform Docs
 
 - [architecture.md](architecture.md)
+- [system-topology.md](system-topology.md)
 - [device-model.md](device-model.md)
 - [mqtt-topics.md](mqtt-topics.md)
 - [vision.md](vision.md)
@@ -102,33 +103,25 @@ See also:
 - [mqtt-topics.md](mqtt-topics.md)
 - Edge firmware heartbeat contract documentation moved to `esp32-main`.
 
-## Agent Skill Packs
+## Codex Skills
 
-- [skills/README.md](skills/README.md)
-- [skills/documentation-agent-skill.md](skills/documentation-agent-skill.md)
-- [skills/implementation-agent-skill.md](skills/implementation-agent-skill.md)
-- [skills/test-agent-skill.md](skills/test-agent-skill.md)
-- [skills/code-review-agent-skill.md](skills/code-review-agent-skill.md)
-- [skills/qa-agent-skill.md](skills/qa-agent-skill.md)
-- [skills/retrospective-agent-skill.md](skills/retrospective-agent-skill.md)
-- [skills/grill-with-docs.md](skills/grill-with-docs.md)
-- [skills/clean-code-contract-first.md](skills/clean-code-contract-first.md)
-- [skills/code-review-gate.md](skills/code-review-gate.md)
-- [skills/qa-evaluation.md](skills/qa-evaluation.md)
+- [.agents/skills/README.md](.agents/skills/README.md)
+- [.agents/skills/documentation/SKILL.md](.agents/skills/documentation/SKILL.md)
+- [.agents/skills/implementation/SKILL.md](.agents/skills/implementation/SKILL.md)
+- [.agents/skills/test/SKILL.md](.agents/skills/test/SKILL.md)
+- [.agents/skills/code-review-agent/SKILL.md](.agents/skills/code-review-agent/SKILL.md)
+- [.agents/skills/code-review-gate/SKILL.md](.agents/skills/code-review-gate/SKILL.md)
+- [.agents/skills/qa/SKILL.md](.agents/skills/qa/SKILL.md)
+- [.agents/skills/retrospective/SKILL.md](.agents/skills/retrospective/SKILL.md)
+- [.agents/skills/grill-with-docs/SKILL.md](.agents/skills/grill-with-docs/SKILL.md)
+- [.agents/skills/solid/SKILL.md](.agents/skills/solid/SKILL.md)
 
-## Role Contracts
+## Codex Custom Agents
 
-- [roles/documentation-agent.md](roles/documentation-agent.md)
-- [roles/implementation-agent.md](roles/implementation-agent.md)
-- [roles/test-agent.md](roles/test-agent.md)
-- [roles/code-review-agent.md](roles/code-review-agent.md)
-- [roles/qa-agent.md](roles/qa-agent.md)
-- [roles/retrospective-agent.md](roles/retrospective-agent.md)
-
-## Archived Template Readmes
-
-- [references/experiments-ex2/include/README](references/experiments-ex2/include/README)
-- [references/experiments-ex2/lib/README](references/experiments-ex2/lib/README)
-- [references/experiments-ex2/test/README](references/experiments-ex2/test/README)
-
+- [.codex/agents/documentation-agent.toml](.codex/agents/documentation-agent.toml)
+- [.codex/agents/implementation-agent.toml](.codex/agents/implementation-agent.toml)
+- [.codex/agents/test-agent.toml](.codex/agents/test-agent.toml)
+- [.codex/agents/code-review-agent.toml](.codex/agents/code-review-agent.toml)
+- [.codex/agents/qa-agent.toml](.codex/agents/qa-agent.toml)
+- [.codex/agents/retrospective-agent.toml](.codex/agents/retrospective-agent.toml)
 

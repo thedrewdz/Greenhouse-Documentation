@@ -2,9 +2,11 @@
 
 ## Inputs
 
+- Test findings
 - Review findings
 - QA findings
 - Implementation deviations
+- Documentation feedback items from all loops
 
 ## What Worked
 
@@ -29,6 +31,14 @@
 - Skill update
 - Spec template update
 - Checklist update
+
+## Loop Evidence Considered
+
+- Implementation loop count:
+- Test artifacts reviewed:
+- Review artifacts reviewed:
+- QA artifacts reviewed:
+- Documentation feedback items reviewed:
 
 ## Documentation Changes Made
 

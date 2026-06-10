@@ -18,6 +18,8 @@ Use this workflow for all non-trivial feature work.
 - Resolve merge conflicts before stage work begins.
 - Stop only if conflicts cannot be resolved safely.
 - If an expected output artifact is not required for a stage, create the file anyway with `Not required` and a reason.
+- Until an orchestration agent exists, a human or caller advances each stage by invoking the next role after verifying the current status and artifacts.
+- Stage reports and `doc-feedback.md` are append-only across repeated implementation loops unless a template explicitly says otherwise.
 
 ## Canonical Spec Status Lifecycle
 
@@ -37,7 +39,8 @@ Primary flow:
 
 Loopbacks:
 
-- Any unresolved prerequisite or unresolved delivery evidence: `*` -> `blocked`
+- Fixable implementation, test, review, or QA failures: return execution status to `ready-for-implementation`
+- True unresolved prerequisites, contradictory docs, missing decisions, unsafe merge state, or process blockers: `*` -> `blocked`
 - Retrospective unblock for doc follow-up: `blocked` -> `new`
 
 Execution lifecycle states remain in `.agent-output/specs/<spec-name>/spec-status.md`.
@@ -91,6 +94,7 @@ Rules:
 - Implement only documented behavior.
 - Do not redefine glossary terms, contracts, or ADR decisions in code.
 - If docs are incomplete or contradictory, log a documentation feedback item.
+- If prior test, review, or QA artifacts exist, resolve their actionable implementation feedback before adding unrelated work.
 - Pull latest `main` into the current working branch before implementation work.
 - Resolve merge conflicts before commencing spec work.
 - Stop only if merge conflicts cannot be resolved safely.
@@ -120,10 +124,12 @@ Rules:
 
 - Prefer behavior-focused tests over implementation-detail tests.
 - Include negative-path and degraded-state tests where relevant.
+- Treat missing or failing tests caused by fixable code behavior as implementation feedback, not a workflow blocker.
+- Treat contradictory acceptance criteria, missing expected behavior, or impossible verification setup as `blocked` with a documentation feedback item.
 - Use branch from `.agent-output/specs/<spec-name>/implementation-plan.md` as source context.
 - Commit and push outputs when complete so downstream stages can consume artifacts.
 - Entry gate execution status: `ready-for-test` or `test-in-progress`.
-- Exit execution status on pass: `ready-for-review`; on unresolved critical coverage: `blocked`.
+- Exit execution status on pass: `ready-for-review`; on fixable test failure or coverage gap: `ready-for-implementation`; on true documentation/process blocker: `blocked`.
 
 ## Stage 4: Code Review Gate
 
@@ -156,7 +162,7 @@ Rules:
 - If not safe, emit concrete implementation feedback and do not merge.
 - If safe, merge the pull request to `main`.
 - Entry gate execution status: `ready-for-review` or `review-in-progress`.
-- Exit execution status: `ready-for-qa` when no blocking findings, else `ready-for-implementation`.
+- Exit execution status: `ready-for-qa` when no blocking findings; `ready-for-implementation` when findings are fixable in code or tests; `blocked` only for true documentation/process blockers that cannot be resolved by implementation.
 
 ## Stage 5: QA Evaluation
 
@@ -180,8 +186,10 @@ Rules:
 
 - Validate user-visible behavior against acceptance criteria.
 - Record doc mismatches as documentation feedback items.
+- Treat reproducible defects or acceptance mismatches that can be fixed in code as implementation feedback.
+- Treat ambiguous acceptance criteria, missing environment prerequisites, or contradictory docs as `blocked` with a documentation feedback item.
 - Entry gate execution status: `ready-for-qa` or `qa-in-progress`.
-- Exit execution status: `complete` on `Go`, `blocked` on `Conditional-Go`, `ready-for-implementation` on `No-Go`.
+- Exit execution status: `complete` on `Go`; `ready-for-implementation` on `Conditional-Go` or `No-Go` when remaining issues are fixable in implementation; `blocked` only when QA cannot safely continue because docs, prerequisites, or process state are unresolved.
 
 ## Stage 6: Retrospective and Artifact Promotion
 
@@ -192,6 +200,8 @@ Inputs:
 - Review findings
 - QA findings
 - Implementation deviations
+- Test findings
+- Documentation feedback items
 
 Outputs:
 
@@ -205,6 +215,8 @@ Rules:
 - Do not add vague rules.
 - Add only reusable guidance that would have prevented or reduced the issue.
 - For every systemic or repeated boundary failure, include at least one concrete guardrail proposal.
+- Review all retained artifacts from every implementation loop, not only the final pass.
+- Consolidate append-only documentation feedback before deciding which docs, skills, templates, or workflow rules need durable updates.
 - Record `promoted`, `rejected`, or `deferred` for each artifact candidate from `.agent-output/specs/<spec-name>/`.
 - Promote only artifacts that conform to templates.
 - Retrospective Agent may update other existing documents in `specs/<spec-name>/` to keep the dossier consistent after promotion.
@@ -223,6 +235,7 @@ Inputs:
 
 - Promoted artifacts in `specs/<spec-name>/`
 - `promotion-log.md`
+- Accepted documentation feedback items
 
 Outputs:
 
@@ -231,6 +244,7 @@ Outputs:
 Rules:
 
 - Resolve promoted feedback into canonical docs in this repository.
+- Update docs, skills, templates, or workflow rules when accepted feedback identifies a reusable gap.
 - Keep terminology and contracts consistent with `CONTEXT.md` and ADRs.
 
 ## Recommended Dossier Artifacts
