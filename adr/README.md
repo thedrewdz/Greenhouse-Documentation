@@ -42,7 +42,8 @@ For each ADR, include:
 
 | ADR | Status | Decision Summary | Affected Domains/Components | Constraints / Non-Negotiables | Supersedes / Superseded By | Canonical File |
 |---|---|---|---|---|---|---|
-| No local ADR files currently tracked in this repository. | n/a | ADR content is maintained in domain repositories as applicable. | n/a | Keep this digest aligned with any ADRs added here later. | n/a | n/a |
+| 0001 — Main Unit UI and services run as independent processes | accepted | The Main Unit runs the services brain and the operator UI as two independent processes communicating only over loopback REST + WebSocket/SSE. | Main Unit (`/services`, `/ui`) | Services autostarts and runs headless with zero dependency on the UI; comms restricted to loopback; services publishes OpenAPI. | Supersedes the `services-old` single-host Blazor Server model | `adr/0001-main-unit-ui-services-separation.md` |
+| 0002 — Flutter (via flutter-pi) for the Main Unit touchscreen UI | accepted, pending hardware spike | The Main Unit touchscreen UI is a Flutter app rendered via flutter-pi (no browser engine on-device), consuming the services API over loopback. | Main Unit (`/ui`) | Pi 4 target; flutter-pi release/AOT; no X11/Wayland/browser; Pi 5 requires re-validation; pin versions; Sony embedder fallback. | — | `adr/0002-main-unit-flutter-flutter-pi-ui.md` |
 
 ## Naming
 
