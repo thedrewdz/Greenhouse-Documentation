@@ -60,6 +60,15 @@ Read area-specific docs only when applicable.
 - Keep MQTT payload examples valid JSON.
 - Update cross-references when moving or renaming docs.
 
+## Version Control
+
+This guardrail applies to every repository in the solution, including this documentation hub.
+
+- `main` is the integration branch and source of truth; it must always be in a working state.
+- Do not commit feature work directly to `main`. All feature work happens on a short-lived branch off the latest `main` and merges back via a reviewed pull request only once complete and working.
+- Branch names follow `<type>/<descriptor>` where `<type>` is `feature`, `bug-fix`, or `update`, and `<descriptor>` is the spec name (when the work maps to a spec dossier) or a short kebab-case summary.
+- See branching-strategy.md for the full policy, rules, and examples.
+
 ## Domain Docs Workflow
 
 Use this workflow for documentation changes:

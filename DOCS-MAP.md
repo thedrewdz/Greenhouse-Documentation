@@ -11,6 +11,10 @@ Always read:
 - [DOCS-MAP.md](DOCS-MAP.md): this routing map.
 - [adr/README.md](adr/README.md): ADR digest and ADR loading rules.
 
+Read before any feature, bug-fix, or update work in any repository:
+
+- [branching-strategy.md](branching-strategy.md): solution-wide version-control guardrail and feature branch naming convention.
+
 ## Platform Orientation
 
 Read these when the task touches broad architecture, platform boundaries, or cross-domain terminology:
