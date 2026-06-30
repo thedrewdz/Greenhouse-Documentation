@@ -4,6 +4,7 @@ Use this workflow for all non-trivial feature work.
 
 ## Core Rules
 
+- Follow [branching-strategy.md](../branching-strategy.md): all feature work happens on a short-lived `<type>/<descriptor>` branch off `main` and merges back via a reviewed pull request only once complete and working. Never commit feature work directly to `main`.
 - Use spec dossiers in `specs/<spec-name>/` as the durable source of truth for feature-level work.
 - Each dossier must contain `spec.md` at minimum.
 - In implementation repositories, all non-documentation artifact generation must go to `.agent-output/specs/<spec-name>/`.
