@@ -66,6 +66,8 @@ This guardrail applies to every repository in the solution, including this docum
 
 - `main` is the integration branch and source of truth; it must always be in a working state.
 - Do not commit feature work directly to `main`. All feature work happens on a short-lived branch off the latest `main` and merges back via a reviewed pull request only once complete and working.
+- **Documentation-only changes are exempt:** when a change touches only documentation files (no source, build, CI/workflow, dependency, or automation-config files) it may be committed directly to `main` without a branch, pull request, or review gate — unless it is bundled with non-doc files, blocked by branch protection, or would break a project/automation workflow. See branching-strategy.md.
+- Before merging any pull request to `main`, first sync the latest `main` into the branch and resolve conflicts, so `main` is never merged from a stale branch.
 - Branch names follow `<type>/<descriptor>` where `<type>` is `feature`, `bug-fix`, or `update`, and `<descriptor>` is the spec name (when the work maps to a spec dossier) or a short kebab-case summary.
 - See branching-strategy.md for the full policy, rules, and examples.
 

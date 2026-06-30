@@ -4,7 +4,7 @@ Use this workflow for all non-trivial feature work.
 
 ## Core Rules
 
-- Follow [branching-strategy.md](../branching-strategy.md): all feature work happens on a short-lived `<type>/<descriptor>` branch off `main` and merges back via a reviewed pull request only once complete and working. Never commit feature work directly to `main`.
+- Follow [branching-strategy.md](../branching-strategy.md): all feature work happens on a short-lived `<type>/<descriptor>` branch off `main` and merges back via a reviewed pull request only once complete and working. Never commit feature work directly to `main`. (Documentation-only changes are exempt and may be committed directly to `main` — see branching-strategy.md.)
 - Use spec dossiers in `specs/<spec-name>/` as the durable source of truth for feature-level work.
 - Each dossier must contain `spec.md` at minimum.
 - In implementation repositories, all non-documentation artifact generation must go to `.agent-output/specs/<spec-name>/`.
@@ -161,7 +161,7 @@ Rules:
 - Require a guardrail update action for every blocking boundary finding.
 - After review completion, decide if the active pull request is safe to merge to `main`.
 - If not safe, emit concrete implementation feedback and do not merge.
-- If safe, merge the pull request to `main`.
+- If safe, first sync the latest `main` into the branch and resolve conflicts (so `main` is never merged from a stale branch), then merge the pull request to `main`.
 - Entry gate execution status: `ready-for-review` or `review-in-progress`.
 - Exit execution status: `ready-for-qa` when no blocking findings; `ready-for-implementation` when findings are fixable in code or tests; `blocked` only for true documentation/process blockers that cannot be resolved by implementation.
 

@@ -14,6 +14,7 @@ Always read:
 Read before any feature, bug-fix, or update work in any repository:
 
 - [branching-strategy.md](branching-strategy.md): solution-wide version-control guardrail and feature branch naming convention.
+- [work-item-tracking.md](work-item-tracking.md): solution-wide work capture and the Greenhouse Delivery project board (one issue per work item; manual-rank priority).
 
 ## Platform Orientation
 
