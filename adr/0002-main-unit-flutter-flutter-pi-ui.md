@@ -38,4 +38,10 @@ Lessons folded into the `/ui` flutter-pi skill pack:
 - Launch needs the `--release` flag; the bundle lands in `build/flutter-pi/<target>/`.
 - Touch arrives over a separate USB connection (HDMI carries video only).
 
-Open issue (does not block this decision): the test touchscreen's EDID misreports its modes (no native 1024x600), so output is scaled/blurry. Candidate fix is a custom EDID (`drm.edid_firmware`); deferred, likely revisited against the production display.
+## Display resolution issue (resolved 2026-06-30)
+
+The earlier open issue — the touchscreen rendered scaled/blurry — is **resolved**. Root cause: the panel ships a spoofed EDID impersonating a *Lenovo L1950wD* (declares 1920x1080 native) with a malformed 1024x600 detailed timing that the Pi `vc4-kms-v3d` driver rejects, so it fell back to 1080p and the 1024x600 panel downscaled it. A `video=` cmdline override could not fix it while the bad EDID was authoritative; legacy `config.txt` `hdmi_*` settings are inert under full KMS.
+
+Fix: override the EDID with `drm.edid_firmware`, advertising only 1024x600 at the panel's native pixel clock/timing with legal blanking that vc4 accepts, baked into the initramfs (vc4 loads before the rootfs mounts). Verified on the Pi 4: framebuffer and output are native 1024x600, 1:1, no scaling.
+
+This is an OS/boot-level fix and must be reapplied after any Pi reimage. The concrete, reapply-able runbook and the EDID assets live in the `/ui` repo: `docs/skills/flutter-pi-on-pi4.md` ("Display resolution / EDID override") and `docs/skills/assets/flutter-pi-edid/`.
