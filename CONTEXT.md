@@ -20,6 +20,13 @@ Deprecated aliases to avoid:
 An ESP32-based unit connected to the Main Unit over MQTT.
 Avoid: legacy aliases for this role
 
+**UI**:
+The Main Unit touchscreen operator interface — a Flutter app rendered via flutter-pi.
+The GitHub repository is named `Greenhouse-WebUI` for technical reasons; this does not make
+"WebUI" a canonical term. Always refer to it as "UI" or "Main Unit UI" in specs, docs, and
+issue titles.
+Avoid: WebUI, web app, web UI, dashboard app
+
 **Sensor Edge Unit**:
 An Edge Unit role that reports measurements from attached sensors.
 Avoid: Reader node
