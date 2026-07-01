@@ -30,22 +30,21 @@ This spec does not cover Edge Unit onboarding, reconfiguration, or network recov
 | Term | Definition |
 |---|---|
 | `MainConfig` | Persisted greenhouse identity: name, location, and optional description. At most one record per Main Unit. |
-| `WifiConfig` | Transient model holding WiFi credentials for a single connection attempt. Never persisted. |
+| `WifiConfig` | Transient request model carrying WiFi credentials for a single connection attempt. Used as input to `POST /api/setup/wifi-config` only. |
+| `WifiCredentials` | Persisted WiFi credentials: network name and password. Stored on successful connection for use by Edge Unit provisioning. At most one record per Main Unit. |
+| `WifiCredentialsEntity` | EF Core infrastructure entity. Maps to the `WifiCredentials` database table. Must not be referenced outside `Greenhouse.Storage`. |
+| `IWifiCredentialsRepository` | Application-layer contract for WifiCredentials persistence operations. |
+| `WifiCredentialsRepository` | Concrete EF Core implementation of `IWifiCredentialsRepository`. Lives in `Greenhouse.Storage`. |
 | `MainConfigEntity` | EF Core infrastructure entity. Maps to the `MainConfigs` database table. Must not be referenced outside `Greenhouse.Storage`. |
 | `IMainConfigRepository` | Application-layer contract for MainConfig persistence operations. |
 | `MainConfigRepository` | Concrete EF Core implementation of `IMainConfigRepository`. Lives in `Greenhouse.Storage`. |
-| `INetworkConnector` | Application-layer port for OS-level WiFi connectivity. Credentials never leave this boundary. |
+| `INetworkConnector` | Application-layer port for OS-level WiFi connectivity. |
 | `WriteMainConfig` | Use case that validates and persists a new MainConfig. |
 | `ReadMainConfig` | Use case that retrieves the current MainConfig when it exists. |
-| `ConnectToNetwork` | Use case that submits WiFi credentials to `INetworkConnector` and returns a result. |
+| `ConnectToNetwork` | Use case that submits WiFi credentials to `INetworkConnector` and, on success, persists them via `IWifiCredentialsRepository`. |
+| `GetWifiCredentials` | Use case that retrieves the stored WiFi credentials for use by the Edge Unit provisioning flow. |
 | `ReadSetupStatus` | Use case that assembles the routing decision from config existence and connectivity state. |
 | Setup status | Read model: `setupComplete`, `isOnline`, `requiredStep`. |
-
-> **Grill note — WiFi repository:** A `WifiConfigRepository` backed by the database is not
-> appropriate here. The spec constraint "do not store WiFi credentials in the application
-> database" means there is no persistable WiFi resource. The application-layer boundary for WiFi
-> is `INetworkConnector` (a port), not a repository. The `WifiConfigController` uses the
-> `ConnectToNetwork` use case which calls `INetworkConnector`.
 
 ## Behavior and Workflow
 
@@ -68,11 +67,12 @@ config existence (from `IMainConfigRepository`) and online state (from `INetwork
 - Trim leading and trailing whitespace from the network name before use.
 - Allow an empty or null password for open networks.
 - Validate input before attempting to connect.
-- **Do not store WiFi credentials in the application database or in any log.**
+- **Do not echo WiFi credentials in any API response or log.**
 - Submit the credentials to `INetworkConnector.ConnectAsync` immediately.
 - On `Failed`: return the error message to the UI for display; do not retain credentials.
 - On `TimedOut`: return a timeout result; do not retain credentials.
-- On `Connected`: UI proceeds to the Main Config step.
+- On `Connected`: persist credentials via `IWifiCredentialsRepository.SaveAsync` then
+  proceed to the Main Config step.
 
 ### Main Config Step
 
@@ -196,6 +196,20 @@ Belongs in `Greenhouse.Storage`. Must not be referenced by application or domain
 Table name: `MainConfigs`. The repository treats this as a single-row store: `GetAsync` returns
 the first row or `null`. A second `POST` must return 409 before reaching the repository.
 
+### WifiCredentialsEntity — EF Core, Infrastructure Only
+
+Belongs in `Greenhouse.Storage`. Must not be referenced by application or domain code directly.
+
+| Column | CLR Type | Constraints |
+|---|---|---|
+| `Id` | `int` | Primary key, auto-increment |
+| `NetworkName` | `string` | Not null; max 100; EF `HasMaxLength(100)` |
+| `Password` | `string` | Not null; stored as plaintext in Phase 1. Encryption at rest is deferred. |
+| `SavedAt` | `DateTime` | Not null; UTC |
+
+Table name: `WifiCredentials`. Single-row store: `GetAsync` returns the first row or `null`.
+`SaveAsync` upserts — replaces the existing row when credentials are updated.
+
 ## Application Layer Contracts
 
 ### Use Cases
@@ -222,7 +236,16 @@ Output: ConnectResult — one of:
           Connected
           Failed(errorMessage: string)
           TimedOut
+Side effect on Connected: persists credentials via IWifiCredentialsRepository.SaveAsync
 ```
+
+**`GetWifiCredentials`**
+```
+Input:  (none)
+Output: WifiCredentials { NetworkName: string, Password: string } | null
+```
+Used by the Edge Unit onboarding flow when constructing the BLE provisioning payload.
+Not exposed as an API endpoint — internal service use only.
 
 **`ReadSetupStatus`**
 ```
@@ -238,6 +261,13 @@ GetAsync()               → Task<MainConfig?>
 CreateAsync(MainConfig)  → Task
 UpdateAsync(MainConfig)  → Task
 DeleteAsync()            → Task
+```
+
+**`IWifiCredentialsRepository`**
+```
+GetAsync()                     → Task<WifiCredentials?>
+SaveAsync(WifiCredentials)     → Task   (upsert — replaces any existing row)
+DeleteAsync()                  → Task
 ```
 
 ### Infrastructure Port
@@ -267,7 +297,9 @@ project) implements this via the OS network manager. See Open Questions for the 
 | GET | `/api/setup/wifi-config` | — | 200 WiFiStatus | — |
 | POST | `/api/setup/wifi-config` | WifiConfig | 200 `{connected:true}` | 422 `{connected:false, errorMessage}` · 504 timeout · 503 connector unavailable |
 
-No PUT or DELETE: credentials are never stored; there is nothing to update or remove.
+No PUT or DELETE on WifiConfigController: the stored credentials are managed exclusively
+through the `ConnectToNetwork` use case (upsert on success). Direct credential management
+from the UI is not exposed.
 
 ### MainConfigController
 
@@ -325,7 +357,8 @@ All error responses use a consistent shape:
 
 - WiFi `password` must not appear in any log output.
 - WiFi `password` must not appear in any API response.
-- WiFi `password` must not be written to the database.
+- WiFi credentials are stored in the `WifiCredentials` SQLite table in plaintext in Phase 1.
+  Encryption at rest is a deferred Phase 2 requirement.
 
 ## Non-Functional Constraints
 
@@ -341,8 +374,8 @@ All error responses use a consistent shape:
 - [ ] `GET /api/setup/status` returns `requiredStep: "main-config"` when no config exists and Main Unit is online.
 - [ ] `GET /api/setup/status` returns `requiredStep: "network-recovery"` when config exists but Main Unit is offline.
 - [ ] `GET /api/setup/status` returns `setupComplete: true` and `requiredStep: null` when config exists and Main Unit is online.
-- [ ] `POST /api/setup/wifi-config` returns 200 `{connected: true}` on successful network connection.
-- [ ] `POST /api/setup/wifi-config` returns 422 `{connected: false}` on authentication failure.
+- [ ] `POST /api/setup/wifi-config` returns 200 `{connected: true}` on successful network connection and persists credentials.
+- [ ] `POST /api/setup/wifi-config` returns 422 `{connected: false}` on authentication failure and does not persist credentials.
 - [ ] `POST /api/setup/wifi-config` returns 504 on connection timeout.
 - [ ] `GET /api/setup/wifi-config` returns connectivity status and never includes credentials.
 - [ ] `POST /api/setup/main-config` returns 201 and the created MainConfig on first creation.
@@ -350,6 +383,8 @@ All error responses use a consistent shape:
 - [ ] `POST /api/setup/main-config` returns 422 when required fields are missing or exceed maximum length.
 - [ ] `GET /api/setup/main-config` returns 200 when MainConfig exists.
 - [ ] `GET /api/setup/main-config` returns 404 when no MainConfig has been created.
+- [ ] WiFi credentials are stored in the `WifiCredentials` database table after a successful connection.
+- [ ] WiFi credentials are retrievable by the Edge Unit onboarding flow via `GetWifiCredentials`.
 - [ ] WiFi credentials do not appear in the `MainConfigs` database table.
 - [ ] WiFi credentials do not appear in any API response.
 - [ ] WiFi credentials do not appear in application logs.
@@ -362,6 +397,7 @@ All error responses use a consistent shape:
 - Scanning and selecting available Wi-Fi networks.
 - Editing MainConfig after setup (`PUT /api/setup/main-config`).
 - Factory-reset deletion of MainConfig (`DELETE /api/setup/main-config`).
+- WiFi credential encryption at rest (Phase 2 hardening).
 - Edge Unit onboarding and reconfiguration (separate specs).
 - Authentication and authorization.
 
