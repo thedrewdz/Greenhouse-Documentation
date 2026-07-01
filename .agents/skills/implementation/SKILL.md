@@ -83,7 +83,7 @@ gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
 
 Before coding, complete all checks:
 
-1. Determine the branch name for this task using the format `feature/<issue-number>-<short-kebab-title>` (e.g. `feature/42-edge-unit-heartbeat`).
+1. Determine the branch name for this task. The format is `feature/<issue-number>-<short-kebab-title>` (e.g. `feature/42-edge-unit-heartbeat`). `<issue-number>` is the **GitHub issue number** — never a task alias, epic label, or human-readable shorthand. Use no other prefix. Do not proceed until the branch name conforms to this format.
 2. Fetch the latest remote state and check whether the branch already exists:
    ```bash
    git fetch origin
