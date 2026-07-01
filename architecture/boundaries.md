@@ -31,6 +31,19 @@ Examples:
 
 `IMessagingService` is a transport abstraction, not a domain router. It should move message envelopes across MQTT and notify subscribers that a message arrived. It must not parse message content into Heartbeat, Telemetry, command acknowledgement, read response, onboarding, or reconfiguration models.
 
+`MessageEnvelope` is the only type that crosses the `IMessagingService` boundary:
+
+```
+Topic: string       — exact received topic
+Payload: string     — raw payload string
+ReceivedAt: DateTime — UTC receipt timestamp
+```
+
+The BLE boundary follows the same rule. `IBleTransport` is infrastructure-internal and must not
+cross into the application layer. The application port is `IEdgeUnitProvisioningTransport`;
+it exposes `ProvisioningPayload` and `ProvisioningResult` — Greenhouse domain models, not BLE
+transport types. GATT UUIDs are private constants inside `Greenhouse.Bluetooth`.
+
 ## DTO Rules
 
 - MQTT payload DTOs stay near MQTT adapter boundaries.

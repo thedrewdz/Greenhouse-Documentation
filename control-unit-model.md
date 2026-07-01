@@ -75,6 +75,8 @@ Greenhouse.Core
 Greenhouse.Core.Tests
 Greenhouse.Mqtt
 Greenhouse.Mqtt.Tests
+Greenhouse.Bluetooth
+Greenhouse.Bluetooth.Tests
 Greenhouse.Storage
 Greenhouse.Storage.Tests
 ```
@@ -181,6 +183,18 @@ Responsibilities:
 - Reconnect on broker/network failure.
 
 This project must depend on MQTT client libraries.
+
+Canonical MQTT client library: `MQTTnet` version `5.1.0.1559` (NuGet package `MQTTnet`).
+Do not use the `MQTTnet.AspNetCore` variant; it is sunset.
+Broker connection settings are read from configuration under the `Mqtt` key:
+
+```json
+"Mqtt": {
+  "Host": "localhost",
+  "Port": 1883,
+  "ClientId": "greenhouse-runtime"
+}
+```
 
 #### `Greenhouse.Storage`
 

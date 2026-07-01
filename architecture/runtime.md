@@ -77,6 +77,104 @@ Message senders are responsible for choosing the topic and payload shape. Messag
 
 Do not add topic-specific methods such as `PublishHeartbeatAsync`, `HandleAckAsync`, or `SubscribeToTelemetryAsync` to `IMessagingService`. Topic-specific behavior belongs in subscriber services or application handlers that register with `IMessagingService`.
 
+### IMessagingService Contract
+
+```
+PublishAsync(topic: string, payload: string, cancellationToken) → Task
+Subscribe(topicPattern: string, handler: Func<MessageEnvelope, Task>) → void
+Unsubscribe(topicPattern: string) → void
+```
+
+`MessageEnvelope` carries transport metadata only:
+
+```
+Topic: string       — exact received topic
+Payload: string     — raw payload string, not parsed
+ReceivedAt: DateTime — UTC receipt timestamp
+```
+
+Topic patterns follow MQTT wildcard conventions (`+` single-level, `#` multi-level).
+Subscribers register at startup via the runtime host composition root.
+Feature services must not call `Subscribe` from inside request handlers or use-case constructors.
+
+### MqttMessagingService (Concrete Implementation)
+
+- Lives in `Greenhouse.Mqtt`.
+- Registered as both `IMessagingService` (singleton) and `IHostedService` in `Program.cs`.
+- Starts the MQTT client connection on `StartAsync`; reconnects automatically on disconnect.
+- Dispatches inbound messages to all matching subscribers on the thread pool.
+- Does not parse payload content.
+
+## BLE Transport
+
+BLE is used exclusively for Edge Unit onboarding in Phase 1. It is not a persistent connection; the
+BLE session is only active while an onboarding workflow is in progress.
+
+### Two-Layer BLE Architecture
+
+BLE is split into two layers to keep BLE mechanics out of application code:
+
+**Layer 1 — `IBleTransport` (infrastructure-internal, `Greenhouse.Bluetooth`)**
+
+A low-level transport building block used only within the `Greenhouse.Bluetooth` project. It is
+not an application-layer port and must not be referenced by `Greenhouse.Core`, `Greenhouse.Runtime`,
+or `Greenhouse.Api`.
+
+```
+ScanAsync(filter: BleScanFilter, cancellationToken) → Task<IReadOnlyList<BleDeviceInfo>>
+ConnectAsync(deviceId: string, cancellationToken) → Task
+WriteCharacteristicAsync(deviceId, serviceUuid, characteristicUuid, data, cancellationToken) → Task
+ReadCharacteristicAsync(deviceId, serviceUuid, characteristicUuid, cancellationToken) → Task<byte[]>
+DisconnectAsync(deviceId: string, cancellationToken) → Task
+```
+
+GATT UUIDs are private constants inside `Greenhouse.Bluetooth` only. Canonical values
+(decoded from ESP32 firmware `services_ble_onboarding.c`):
+
+| Role | UUID |
+|---|---|
+| Onboarding service | `00014452-414f-424e-4f2d-454744454847` |
+| Provisioning payload characteristic | `00024452-414f-424e-4f2d-454744454847` |
+| Provisioning status characteristic | `00034452-414f-424e-4f2d-454744454847` |
+
+Provisioning payload characteristic: Write (with response).
+Provisioning status characteristic: Read + Notify.
+Advertising name prefix: `GH-Edge-` (e.g. `GH-Edge-1ADD5912AF61`).
+
+The `BlueZBleTransport` implementation uses `bluetoothctl` subprocess (same pattern as the
+proven `services-old/Greenhouse.Bluetooth/BlueZEdgeUnitDiscoveryService`). No BLE NuGet
+library is required. GATT write/read operations use `bluetoothctl` interactive mode.
+
+**Layer 2 — `IEdgeUnitProvisioningTransport` (application port, `Greenhouse.Core`)**
+
+The application-layer contract that use cases depend on. Expresses operations in Greenhouse
+domain terms with no BLE-specific types.
+
+```
+ScanForProvisionableUnitsAsync(timeout: TimeSpan, cancellationToken)
+    → Task<IReadOnlyList<ProvisionableUnit>>
+
+ProvisionUnitAsync(deviceId: string, payload: ProvisioningPayload, cancellationToken)
+    → Task<ProvisioningResult>
+```
+
+`ProvisioningPayload` and `ProvisioningResult` are application models in `Greenhouse.Core`.
+They map to the BLE provisioning JSON schema defined in `specs/edge-unit-onboarding/spec.md`.
+
+**`BleEdgeUnitProvisioningAdapter` (`Greenhouse.Bluetooth`)**
+
+Implements `IEdgeUnitProvisioningTransport`. Uses `IBleTransport` internally. Owns all GATT
+UUID constants as private members. Serialises `ProvisioningPayload` to JSON before writing;
+deserialises the BLE status response into `ProvisioningResult`.
+
+### BLE Startup and Lifecycle
+
+- `BlueZBleTransport` is registered as `IBleTransport` (singleton) in `Program.cs`.
+- `BleEdgeUnitProvisioningAdapter` is registered as `IEdgeUnitProvisioningTransport` (singleton).
+- Neither starts a BLE scan at process startup. BLE scanning begins only when an onboarding
+  use case calls `ScanForProvisionableUnitsAsync`.
+- The adapter must clean up any open GATT connections on cancellation or timeout.
+
 ## Background Services
 
 Background services may own:

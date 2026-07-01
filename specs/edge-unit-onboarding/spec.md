@@ -92,6 +92,27 @@ Persistence requirements:
 - Edge Unit may update these persisted values at any time when a new valid provisioning payload is accepted, including onboarding or later reconfiguration flows.
 - Persistence must be applied as one logical configuration update; on write failure, Edge Unit must retain the last known valid configuration.
 
+## GATT Service and Characteristic UUIDs
+
+These UUIDs are canonical. Firmware (NimBLE) stores them in little-endian byte order internally;
+the values below are the standard big-endian UUID string representations.
+
+| Role | UUID | Properties |
+|---|---|---|
+| Onboarding service | `00014452-414f-424e-4f2d-454744454847` | Primary service |
+| Provisioning payload characteristic | `00024452-414f-424e-4f2d-454744454847` | Write (with response) |
+| Provisioning status characteristic | `00034452-414f-424e-4f2d-454744454847` | Read + Notify |
+
+BLE advertising:
+- Edge Unit advertises the onboarding service UUID in its advertisement payload.
+- Edge Unit advertisement name follows the pattern `GH-Edge-{device_id}` (e.g. `GH-Edge-1ADD5912AF61`).
+- Main Unit BLE scanner filters on the `GH-Edge-` name prefix to discover provisionable Edge Units.
+
+Provisioning write/read flow:
+1. Main Unit writes the provisioning payload JSON to the provisioning payload characteristic.
+2. Edge Unit validates and processes the payload.
+3. Main Unit reads (or receives a notification on) the status characteristic to obtain the result.
+
 ## Validation Rules and Error Handling
 
 Edge Unit must reject onboarding payload when:

@@ -48,13 +48,16 @@ Future implementation agents will know whether they are allowed to proceed and w
 
 ### Disposition
 
-- [ ] Accepted
+- [x] Accepted
 - [ ] Rejected
-- [x] Deferred
+- [ ] Deferred
 
 ### Final Doc Update
 
-Pending documentation repository update.
+Spec `templates/spec.md` updated to include Status Tracking section pointing to `status.md`.
+Implementation agents should record status transitions in the implementation repository's
+`.agent-output/specs/<spec-name>/spec-status.md` and report missing Spec Control blocks
+via local `doc-feedback.md` without blocking implementation.
 
 ## Item 2
 
@@ -93,13 +96,16 @@ Prevents Main Unit and Edge Unit implementations from diverging on BLE discovery
 
 ### Disposition
 
-- [ ] Accepted
+- [x] Accepted
 - [ ] Rejected
-- [x] Deferred
+- [ ] Deferred
 
 ### Final Doc Update
 
-Pending documentation repository update.
+GATT UUIDs canonicalized in `specs/edge-unit-onboarding/spec.md` §GATT Service and
+Characteristic UUIDs and in `architecture/runtime.md` §BLE Transport. UUIDs decoded from
+firmware source (`services_ble_onboarding.c`). Advertising name prefix `GH-Edge-` confirmed
+from `services-old/Greenhouse.Bluetooth/BlueZEdgeUnitDiscoveryService.cs`.
 
 ## Item 3
 

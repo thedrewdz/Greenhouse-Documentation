@@ -40,11 +40,24 @@ Owns:
 
 - MQTT clients, subscriptions, publishing, serialization, and retry behavior.
 - Database implementations and migrations.
-- BLE provisioning adapters.
+- BLE transport and provisioning adapters.
 - Hardware/OS integrations, including I2C communication with Peripheral Units.
 - Future cloud, weather, AI, or notification adapters.
 
 Infrastructure implements application-owned contracts.
+
+### Infrastructure-Internal Interfaces
+
+Some infrastructure projects define internal interfaces that exist purely to enable testing and
+stack-swapping within the infrastructure layer. These are **not** application-layer ports and must
+not be referenced outside their own project.
+
+| Interface | Project | Purpose |
+|---|---|---|
+| `IBleTransport` | `Greenhouse.Bluetooth` | Low-level BLE scan, connect, read, write. Used only by `BleEdgeUnitProvisioningAdapter`. GATT UUIDs stay inside this project. |
+
+The application-layer port for BLE is `IEdgeUnitProvisioningTransport` in `Greenhouse.Core`.
+Application and domain code must depend on `IEdgeUnitProvisioningTransport`, never on `IBleTransport`.
 
 Peripheral Units (the microcontroller boards attached to Edge Unit slots over I2C) are hardware endpoints, not software components. Edge Unit firmware owns the I2C driver layer that translates application-level instructions into I2C transactions and canonicalizes Peripheral Unit responses before they reach Edge Unit application logic.
 

@@ -98,9 +98,14 @@ For every question, include:
 13. Run a final consistency pass across related documents.
 14. Record open questions and assumptions.
 15. Create or update `specs/<spec-name>/status.md` from `templates/spec-canonical-status.md`.
-16. Set canonical status in `status.md`: `ready-for-dev` when quality gate passes and no ambiguous implementation blockers remain, `new` when drafting is incomplete, `blocked` when unresolved contradictions or missing required decisions prevent safe implementation, or `in-dev` when execution status indicates implementation lifecycle activity.
+16. Set canonical status in `status.md`: `ready-for-dev` when quality gate passes and no ambiguous implementation blockers remain, `new` when drafting is incomplete, `blocked` when unresolved contradictions or missing required decisions prevent safe implementation, or `in-dev` when execution status indicates implementation lifecycle activity. Set this immediately when the gate passes — do not defer it to a later pass.
 17. Append canonical Status History in `status.md`.
-18. Prepare implementation handoff summary.
+18. **Readiness propagation.** After setting a spec to `ready-for-dev`, check whether it belongs to a parent epic on the board.
+    - Identify the sibling specs tracked under the same epic (from the spec's GitHub issue body or the epic's sub-issue list).
+    - Read the `status.md` for each sibling spec.
+    - If every sibling spec is `ready-for-dev` and the epic itself has no unresolved open questions, missing spec artifacts, or outstanding grooming gaps, set the epic's **Status** field on the Greenhouse Delivery project board to `Ready For Dev` using the GraphQL `updateProjectV2ItemFieldValue` mutation. Do not use a label for this — `Ready For Dev` is a board Status option, not a label.
+    - If any sibling spec is still `new` or `blocked`, do not update the epic — note the remaining blockers in the handoff summary instead.
+19. Prepare implementation handoff summary.
 
 ## Quality Gate
 
@@ -114,6 +119,8 @@ For every question, include:
 - Acceptance criteria are testable.
 - Terminology is canonical and consistent with `CONTEXT.md`.
 - Canonical status in `specs/<spec-name>/status.md` reflects current readiness and has a traceable history entry.
+- `ready-for-dev` is set in the same pass that the quality gate first passes — never left as `new` when the gate is satisfied.
+- If all sibling specs under a parent epic are `ready-for-dev`, the epic tracking issue is updated to reflect readiness.
 
 ## Output Checklist
 
@@ -124,3 +131,4 @@ For every question, include:
 - Open questions list containing only true blockers.
 - Optional follow-up patch suggestions for adjacent docs.
 - Updated artifacts remain in `specs/<spec-name>/` and conform to templates.
+- If readiness propagation was evaluated: explicit note on whether the parent epic was updated and why (all siblings ready, or which siblings are still blocking).
