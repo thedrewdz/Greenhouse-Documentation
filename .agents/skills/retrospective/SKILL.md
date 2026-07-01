@@ -1,58 +1,59 @@
 ---
 name: retrospective
-description: Use this skill when running retrospective agent work after QA or delivery, including promoting implementation artifacts into docs, validating templates, updating canonical spec status, identifying systemic failures, and applying durable guardrail updates.
+description: Use this skill after QA to confirm delivery completion, identify recurring failures, apply guardrail updates, and close the board item as Done.
 ---
 
 # Retrospective Skill
 
-Convert recurring delivery issues into durable documentation and process improvements.
+Confirm delivery, improve guardrails, and close the board item.
 
 Used by custom agent: [../../../.codex/agents/retrospective-agent.toml](../../../.codex/agents/retrospective-agent.toml)
 
-## Output Artifact Contract
+## Board Operations
 
-- In implementation repositories, consume generated artifacts from `.agent-output/specs/<spec-name>/`.
-- Copy approved artifacts into `specs/<spec-name>/` in this docs repository.
-- Use templates from this docs repository as the source format for generated and promoted artifacts.
-- Update canonical docs status in `specs/<spec-name>/status.md` from `templates/spec-canonical-status.md`.
-- Read status from `.agent-output/specs/<spec-name>/spec-status.md`.
-- If an expected artifact is missing or not required, create a placeholder artifact with `Not required` and a reason before promotion decisions.
+The Greenhouse Delivery board (project `1`, owner `thedrewdz`) is the **primary status authority**. The board item, its comments, and its sub-issues are the complete record of the work.
+
+**Find the board item ID for the current task:**
+```bash
+gh project item-list 1 --owner thedrewdz --format json --limit 100 \
+  | ConvertFrom-Json | Select-Object -ExpandProperty items \
+  | Where-Object { $_.content.number -eq <issue-number> -and $_.repository -like "*<repo>*" } \
+  | Select-Object -ExpandProperty id
+```
+
+**Set board status to Done (after confirmed complete with all sub-issues closed):**
+```bash
+# Verify no open sub-issues remain
+gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
+  --jq '[.[] | select(.state=="open")] | length'
+# Must return 0, then:
+gh project item-edit --project-id PVT_kwHOClcYbc4BcGuS --id <item-id> \
+  --field-id PVTSSF_lAHOClcYbc4BcGuSzhWx6Oo --single-select-option-id 98236657
+```
+
+**Documentation hole or process gap found — create standalone Todo issue in the docs repo:**
+```bash
+gh issue create -R thedrewdz/Greenhouse-Documentation \
+  --title "Doc: <title>" --label "documentation" \
+  --body "<description>. Identified during retrospective for: <current-issue-url>"
+```
 
 ## Workflow
 
-1. Pull latest remote changes for both docs and implementation repos with `git pull --ff-only` and stop on conflicts.
-2. Identify the repository where the work was completed.
-3. Check `.agent-output/specs/<spec-name>/` in that repository before commencing.
-4. Read `.agent-output/specs/<spec-name>/spec-status.md`.
-5. Read canonical status from `specs/<spec-name>/status.md`.
-6. Continue only when execution status is `complete` or `blocked` after QA.
-7. If execution status is not eligible, stop and emit a handoff failure with required upstream role and reason.
-8. If execution status is `complete`, confirm the implemented changes were delivered through a pull request and that the pull request was merged to the implementation repository `main` branch.
-9. If PR traceability or merge-to-main confirmation is missing for a `complete` spec, set execution status to `blocked` with rationale and required follow-up.
-10. Consolidate review, QA, and implementation findings.
-11. Consolidate test findings and all append-only documentation feedback items across repeated implementation loops.
-12. Identify repeated or systemic failure patterns.
-13. Import candidate artifacts from `.agent-output/specs/<spec-name>/` in the implementation repository into the retrospective workspace for evaluation.
-14. Validate each artifact against corresponding templates.
-15. Copy approved artifacts into `specs/<spec-name>/` in this docs repository.
-16. Create or update `specs/<spec-name>/promotion-log.md` from `templates/promotion-log.md`.
-17. Mark each candidate artifact as `promoted`, `rejected`, or `deferred` with rationale.
-18. Update canonical docs status in `specs/<spec-name>/status.md`: set `complete` when execution status is complete and PR merge-to-main is confirmed; set `blocked` when unresolved retrospective blockers remain.
-19. Append canonical status history entries with rationale.
-20. Update other existing documents in `specs/<spec-name>/` when needed to preserve consistency after promotion.
-21. Propose and apply guardrail updates needed in specs, skills, templates, or workflow docs.
-22. Document rationale and expected prevention effect.
-23. Define follow-up actions.
-24. If retrospective resolves documentation/process blockers, set execution status from `blocked` to `new` with rationale for Documentation Agent follow-up, then append Status History in `spec-status.md`.
+1. Read the board item, all comments, and all sub-issues to understand the full delivery history.
+2. Confirm a pull request exists for this task's implementation branch and has been approved. If no approved PR exists, comment on the issue with the required step and stop.
+3. Confirm all defect sub-issues are closed. If any remain open, comment on the issue and stop — do not mark Done.
+4. Review all findings recorded as comments and sub-issues across the full SDLC for this task.
+5. Identify repeated or systemic failure patterns.
+6. For each systemic process or documentation gap, file a new standalone issue in `Greenhouse-Documentation` at default **Todo** status referencing the current task URL (see Board Operations).
+7. Propose and apply guardrail updates directly to affected specs, skills, or workflow docs in this repository when the change is clear and bounded.
+8. Document the rationale for each guardrail change as a comment on the issue.
+9. Merge the approved pull request to `main`.
+10. Close the delivery issue and set the board item to **Done** (see Board Operations).
 
 ## Quality Gate
 
-- Changes are reusable, not ad hoc.
-- Guardrail updates are traceable to real findings.
-- Follow-up actions are specific.
-- Promotion decisions are traceable per artifact.
-- All implementation, test, review, QA, and documentation feedback artifacts across repeated loops are considered.
-- Dossier updates in `specs/<spec-name>/` remain template-conformant.
-- Canonical status in `specs/<spec-name>/status.md` is updated with traceable history.
-- Any status change made during retrospective is explicit and recorded in `spec-status.md` Status History.
-- For `complete` specs, PR linkage and merge-to-main confirmation are recorded.
+- All sub-issues are verified closed before marking Done.
+- Systemic failures are identified and filed as new Todo issues in `Greenhouse-Documentation`.
+- Guardrail updates are traceable to real findings and applied directly to affected docs.
+- Board item is set to **Done** only after all checks above pass.

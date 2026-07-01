@@ -10,8 +10,8 @@ For physical deployment, hardware makeup, host choices, Edge Unit makeup, and op
 
 - Keep automation local-first and deterministic.
 - Keep domain policy independent from UI, storage, MQTT, hardware drivers, and future cloud or AI adapters.
-- Keep the configured Main Unit able to run headless, without starting or serving the web UI.
-- Keep the web UI deployable and runnable separately from the backend runtime.
+- Keep the configured Main Unit able to run headless, without starting the local touchscreen UI.
+- Keep the Flutter touchscreen UI deployable and runnable separately from the backend runtime.
 - Preserve MQTT-centered integration while preventing transport details from leaking into domain behavior.
 - Make contracts explicit and testable before implementation.
 - Keep Main Unit setup, network recovery, Edge Unit onboarding, and Edge Unit reconfiguration as separate workflows.
@@ -28,15 +28,17 @@ The Main Unit is the local system authority for software orchestration:
 - exposes local UI and API surfaces
 - coordinates Edge Unit onboarding and reconfiguration workflows
 
-The web UI is optional for normal operation after Main Unit setup is complete. A configured Main Unit must be able to start its runtime services, load persisted state, process MQTT traffic, evaluate automation rules, dispatch commands, maintain state, and expose backend API surfaces without a browser session or web dashboard being active.
+The local touchscreen UI is optional for normal operation after Main Unit setup is complete. A configured Main Unit must be able to start its runtime services, load persisted state, process MQTT traffic, evaluate automation rules, dispatch commands, maintain state, and expose backend API surfaces without the UI process being active.
 
-The web UI is a thin Blazor client. It must run separately from the backend runtime and interact with the backend only through backend-exposed API calls or explicitly documented realtime read channels.
+The local UI is a thin Flutter client rendered via `flutter-pi`. It must run separately from the backend runtime and interact with the backend only through backend-exposed API calls or explicitly documented realtime read channels.
 
 Backend API endpoints are presentation adapters over Main Unit application contracts. API calls may display state and initiate user-driven use cases, but they must not store request-local workflow state that is required by later requests. Underlying backend services may be stateful; UI-facing API calls must remain stateless and idempotent from the client's point of view.
 
-The web UI must not own automation state, onboarding/reconfiguration workflow state, lifecycle-critical subscriptions, scheduling loops, BLE sessions, MQTT connections, or persistence authority.
+The UI must not own automation state, onboarding/reconfiguration workflow state, lifecycle-critical subscriptions, scheduling loops, BLE sessions, MQTT connections, or persistence authority.
 
 Edge Unit firmware is a cooperating distributed endpoint. It publishes telemetry and heartbeat data, accepts commands, reports state, and enforces local failsafe behavior. Firmware-specific contracts live in [device-model.md](device-model.md), [mqtt-topics.md](mqtt-topics.md), and relevant specs.
+
+Each Edge Unit hosts one or more Peripheral Units over a shared I2C bus. A Peripheral Unit is a small microcontroller hard-coded for a specific sensor or actuator; it is not a software-configurable node and has no direct MQTT or network presence. The Edge Unit firmware owns the I2C master role: it translates MQTT commands received from the Main Unit into generic I2C instructions directed at the appropriate Peripheral Unit, and translates canonicalized I2C responses from Peripheral Units into MQTT telemetry or state payloads before publishing upstream. Peripheral Unit failsafe behavior is self-contained and does not depend on the Edge Unit or Main Unit being reachable.
 
 ## Layer Model
 
@@ -45,7 +47,7 @@ Use inward dependency direction:
 1. Domain: greenhouse concepts, automation rules, invariants, and state transitions.
 2. Application: use cases, workflow orchestration, ports, and transaction boundaries.
 3. Infrastructure: MQTT, persistence, BLE, hardware adapters, OS services, and external integrations.
-4. Presentation: thin web UI, backend API endpoints, screens, view models, and user interaction flows.
+4. Presentation: thin Flutter UI (via `flutter-pi`), backend API endpoints, screens, view models, and user interaction flows.
 
 Outer layers may depend on inner layers. Inner layers must not depend on outer-layer implementations.
 
@@ -54,7 +56,7 @@ Read [architecture/layers.md](architecture/layers.md) when changing project/modu
 ## Boundary Rules
 
 - Parse and validate external input at system boundaries.
-- Translate MQTT payloads, HTTP/API requests, BLE messages, database records, and hardware-driver responses into domain/application models before policy code uses them.
+- Translate MQTT payloads, HTTP/API requests, BLE messages, I2C responses from Peripheral Units, database records, and hardware-driver responses into domain/application models before policy code uses them.
 - Keep domain/application code free of framework, transport, storage, and hardware-driver types.
 - Model error semantics as part of contracts.
 - Treat recurring integration streams, such as heartbeats, as runtime-wide concerns behind shared abstractions.
@@ -105,7 +107,8 @@ Read [architecture/testing.md](architecture/testing.md) when planning test cover
 
 - [system-topology.md](system-topology.md): physical/logical system makeup, deployment assumptions, hardware, and host configuration.
 - [CONTEXT.md](CONTEXT.md): canonical terminology.
-- [device-model.md](device-model.md): Edge Unit, slot, module, telemetry, heartbeat, and device identity model.
+- [device-model.md](device-model.md): Edge Unit, slot, Peripheral Unit, telemetry, heartbeat, and device identity model.
 - [mqtt-topics.md](mqtt-topics.md): MQTT topics and canonical payload contracts.
 - [control-unit-model.md](control-unit-model.md): Main Unit domain model and automation behavior.
 - [workflows/feature-delivery-harness.md](workflows/feature-delivery-harness.md): delivery loop, status gates, and artifact flow.
+- [adr/0002-main-unit-flutter-flutter-pi-ui.md](adr/0002-main-unit-flutter-flutter-pi-ui.md): accepted UI runtime decision for local touchscreen deployment.

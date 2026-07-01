@@ -19,7 +19,7 @@ Runtime responsibilities include:
 
 ## Headless Operation
 
-After Main Unit setup is complete, the configured Main Unit must support headless startup. Headless startup means the runtime starts without serving the web dashboard and without requiring an active browser session.
+After Main Unit setup is complete, the configured Main Unit must support headless startup. Headless startup means the runtime starts without launching the local touchscreen UI.
 
 In headless operation, the Main Unit must still:
 
@@ -30,11 +30,11 @@ In headless operation, the Main Unit must still:
 - persist telemetry, liveness snapshots, audit-relevant command history, and state changes
 - recover bounded offline buffers according to documented retry and retention rules
 
-Web UI availability is not a prerequisite for these runtime responsibilities. Backend API availability may be enabled for local clients, but API request handling must not be required for automation loops, MQTT handling, command dispatch, persistence, or workflow recovery.
+UI availability is not a prerequisite for these runtime responsibilities. Backend API availability may be enabled for local clients, but API request handling must not be required for automation loops, MQTT handling, command dispatch, persistence, or workflow recovery.
 
 ## Backend API Runtime
 
-The backend API is part of the Main Unit backend, not part of the Blazor web UI.
+The backend API is part of the Main Unit backend, not part of the Flutter UI process.
 
 The backend API exposes RESTful resources for:
 
@@ -59,7 +59,7 @@ Recurring message streams, such as heartbeats and telemetry, are runtime-wide co
 
 ## Code Biases For Long-Lived Runtime Concerns
 
-Prefer explicit long-lived services for cross-cutting runtime responsibilities that must survive without the web UI. These services should be owned by the Main Unit runtime host and governed by application/core contracts.
+Prefer explicit long-lived services for cross-cutting runtime responsibilities that must survive without the UI. These services should be owned by the Main Unit runtime host and governed by application/core contracts.
 
 The first required long-lived service is `IMessagingService`.
 
@@ -89,7 +89,7 @@ Background services may own:
 
 Background services should delegate decisions to application/domain services instead of owning business policy directly.
 
-Lifecycle-critical background services must be registered with the Main Unit runtime host, not with the web UI host. The backend API may invoke application contracts, and the web UI may observe or request changes through backend API calls, but stopping the web UI must not stop automation, MQTT handling, command dispatch, onboarding workflows, or persistence.
+Lifecycle-critical background services must be registered with the Main Unit runtime host, not with the UI host. The backend API may invoke application contracts, and the UI may observe or request changes through backend API calls, but stopping the UI must not stop automation, MQTT handling, command dispatch, onboarding workflows, or persistence.
 
 ## Workflow Separation
 

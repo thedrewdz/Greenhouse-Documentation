@@ -3,8 +3,8 @@
 # Overview
 
 The greenhouse platform uses a distributed device model built around modular ESP32-based nodes.
-Each Edge Unit hosts a fixed number of slots for sensor and actuator connections.
-Attached sensor and actuator MPUs are responsible for local hardware translation and canonicalization.
+Each Edge Unit hosts a fixed number of slots for Peripheral Units.
+Each Peripheral Unit is hard-coded for a specific sensor or actuator and is responsible for local hardware interaction, translation, and canonicalization.
 
 This allows:
 - flexibility
@@ -19,31 +19,33 @@ This allows:
 Each Edge Unit has a fixed slot count.
 
 - Each slot uses a 4-wire cable.
-- Connected sensor and actuator MPUs share the same I2C bus on the Edge Unit.
+- Peripheral Units share the same I2C bus on the hosting Edge Unit.
 - A slot may be unassigned, sensor-assigned, or actuator-assigned.
 
-## Sensor MPUs
+## Sensor Peripheral Units
 
-Sensors use a small onboard MPU (for example Arduino Nano or Pro class boards).
+A sensor Peripheral Unit is a small microcontroller board (for example Arduino Nano or Pro class boards) hard-coded for a specific sensor.
 
-- The sensor MPU owns sensor-specific hardware interactions.
-- The sensor MPU publishes canonicalized values to the hosting Edge Unit.
-- Sensor identity uses a unique I2C address.
+- Owns all sensor-specific hardware interactions.
+- Receives a generic read instruction from the hosting Edge Unit over I2C.
+- Executes the sensor read and returns a canonicalized telemetry value to the hosting Edge Unit over I2C.
+- Peripheral Unit identity on the I2C bus uses a unique I2C address.
 
 Initial addressing convention:
 
 - 0x20-0x2F: moisture sensor family
 - Additional ranges should be reserved per sensor family as needed.
 
-In rare cases where the attached sensing hardware also uses I2C, the sensor MPU may be ESP32-based to use dual I2C buses.
+In rare cases where the attached sensing hardware also uses I2C, the Peripheral Unit may be ESP32-based to use dual I2C buses.
 
-## Actuator MPUs
+## Actuator Peripheral Units
 
-Actuator MPUs receive generic instructions from the hosting Edge Unit and translate them to actuator-specific operations.
+An actuator Peripheral Unit is a small microcontroller board hard-coded for a specific actuator.
 
-- Execute actuator-specific behavior.
-- Return canonicalized response status to the hosting Edge Unit.
-- Keep actuator safety behavior local to the actuator module.
+- Receives a generic instruction from the hosting Edge Unit over I2C.
+- Translates the instruction to the actuator-specific operation and executes it.
+- Returns a canonicalized response status to the hosting Edge Unit over I2C.
+- Keeps actuator safety behavior local to the Peripheral Unit; failsafe behavior does not depend on the Edge Unit or Main Unit being reachable.
 
 ---
 

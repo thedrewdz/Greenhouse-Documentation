@@ -16,7 +16,7 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 - The Main Unit receives runtime heartbeats on `gh/heartbeat` after onboarding.
 - The Main Unit is the source of truth for runtime configuration and slot mapping.
 - Edge Units do not persist long-term runtime configuration in Phase 1 beyond the accepted provisioning values required by the BLE onboarding contract.
-- The web UI is a thin client that starts, cancels, and observes onboarding/reconfiguration through backend API resources.
+- The UI is a thin client that starts, cancels, and observes onboarding/reconfiguration through backend API resources.
 - Phase 1 has one active Edge Unit onboarding workflow per Main Unit backend. Separate onboarding sessions for multiple UI instances are not required.
 
 ## Definitions and Canonical Terms

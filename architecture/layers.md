@@ -41,16 +41,18 @@ Owns:
 - MQTT clients, subscriptions, publishing, serialization, and retry behavior.
 - Database implementations and migrations.
 - BLE provisioning adapters.
-- Hardware/OS integrations.
+- Hardware/OS integrations, including I2C communication with Peripheral Units.
 - Future cloud, weather, AI, or notification adapters.
 
 Infrastructure implements application-owned contracts.
+
+Peripheral Units (the microcontroller boards attached to Edge Unit slots over I2C) are hardware endpoints, not software components. Edge Unit firmware owns the I2C driver layer that translates application-level instructions into I2C transactions and canonicalizes Peripheral Unit responses before they reach Edge Unit application logic.
 
 ## Presentation Layer
 
 Owns:
 
-- Thin web UI client.
+- Thin local touchscreen UI client (Flutter via `flutter-pi`).
 - Backend API endpoints.
 - View models and request/response presentation shapes.
 - User interaction flow.
@@ -58,17 +60,17 @@ Owns:
 
 Presentation must not construct or depend on infrastructure implementations directly.
 
-Presentation is optional for a configured Main Unit at runtime. The web UI may be unavailable, stopped, or not installed without preventing automation, MQTT handling, command dispatch, persistence, or background services from continuing.
+Presentation is optional for a configured Main Unit at runtime. The local touchscreen UI may be unavailable, stopped, or not installed without preventing automation, MQTT handling, command dispatch, persistence, or background services from continuing.
 
 Presentation must not own durable Main Unit state. It reads state through application queries and requests changes through application commands.
 
-The web UI and backend API are separate presentation hosts:
+The local UI and backend API are separate presentation hosts:
 
-- The web UI is a thin Blazor application that renders views and calls backend APIs.
-- The web UI must not host backend API endpoints.
-- The web UI must not reference backend implementation projects, infrastructure adapters, BLE libraries, MQTT libraries, or persistence adapters.
+- The UI is a thin Flutter application rendered through `flutter-pi` that renders views and calls backend APIs.
+- The UI must not host backend API endpoints.
+- The UI must not reference backend implementation projects, infrastructure adapters, BLE libraries, MQTT libraries, or persistence adapters.
 - The backend API host exposes RESTful resources over application contracts.
-- The backend API host may run in the same process as the Main Unit runtime host or as a separate backend process, but it remains part of the backend, not the web UI.
+- The backend API host may run in the same process as the Main Unit runtime host or as a separate backend process, but it remains part of the backend, not the UI.
 
 UI-to-backend communication must use backend-exposed API calls. Long-running workflow progress may use polling or an explicitly documented durable read channel, such as a WebSocket or SignalR connection, but the backend remains the source of truth.
 
@@ -84,7 +86,7 @@ The runtime host owns process startup for:
 - Command dispatch and retry services.
 - Persistence adapters and migrations.
 
-The web UI has its own presentation host. It must not be the place where lifecycle-critical runtime services, backend API endpoints, BLE sessions, MQTT connections, or persistence adapters are registered or started.
+The UI has its own presentation host. It must not be the place where lifecycle-critical runtime services, backend API endpoints, BLE sessions, MQTT connections, or persistence adapters are registered or started.
 
 ## Dependency Direction
 

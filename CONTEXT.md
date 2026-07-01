@@ -31,12 +31,20 @@ Avoid: Output node
 ### Hardware Model
 
 **Slot**:
-A numbered attachment point on an Edge Unit for one module.
+A numbered attachment point on an Edge Unit for one Peripheral Unit.
 Avoid: Port, channel
 
 **Module**:
 A sensor or actuator module attached to a slot.
 Avoid: Addon, plugin
+
+**Peripheral Unit**:
+A microcontroller-based unit hosted by an Edge Unit and hard-coded for a specific sensor or actuator.
+A Peripheral Unit communicates with its hosting Edge Unit exclusively over I2C: it receives a generic instruction from the Edge Unit, executes the sensor read or actuator action, and returns a canonicalized response to the Edge Unit.
+Peripheral Units own all sensor- or actuator-specific hardware interactions, keeping Edge Unit firmware hardware-agnostic.
+A Peripheral Unit may be sensor-oriented (reads a measurement and returns a canonicalized telemetry value) or actuator-oriented (executes an actuator action and returns a canonicalized status response).
+The hosting Edge Unit mediates between MQTT commands from the Main Unit and I2C instructions to Peripheral Units; Peripheral Units have no direct MQTT presence.
+Avoid: sensor MPU, actuator MPU (use "sensor Peripheral Unit" or "actuator Peripheral Unit" when the role must be specified)
 
 **Slot Fault Isolation**:
 A fault containment rule where one failing slot does not cascade failure to other slots.

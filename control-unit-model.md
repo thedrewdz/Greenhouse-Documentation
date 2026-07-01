@@ -14,22 +14,21 @@ Canonical references for adjacent concerns:
 - Durable agent policy: `AGENTS.md`
 - Edge Unit onboarding payload contract: `specs/edge-unit-onboarding/spec.md`
 
-The Main Unit is the local-first brain of the greenhouse automation platform. It runs on a Raspberry Pi, communicates with ESP32 Edge Unit nodes over MQTT, stores local state/history, hosts the local web dashboard, and executes deterministic automation rules.
+The Main Unit is the local-first brain of the greenhouse automation platform. It runs on a Raspberry Pi, communicates with ESP32 Edge Unit nodes over MQTT, stores local state/history, hosts an optional local touchscreen UI process, and executes deterministic automation rules.
 
 The current preferred implementation is:
 
-- **Main Unit runtime host decoupled from the web UI**
+- **Main Unit runtime host decoupled from the UI process**
 - **Backend API exposed by the Main Unit backend**
-- **Thin ASP.NET Core Blazor Web App for the optional local dashboard**
-- **Interactive Server render mode for the dashboard when enabled**
-- **Global interactivity for the dashboard when enabled**
+- **Thin Flutter app for the optional local touchscreen UI**
+- **Flutter UI rendered via `flutter-pi` on Raspberry Pi**
 - **No authentication initially**
 - **Explicit `Program.cs` with `public static void Main(string[] args)`**
 - **SQLite initially**
 - **Mosquitto as the MQTT broker**
 - **No containerization in Phase 1**
 - **Raspberry Pi Debian Bookworm target**
-- **Browser/kiosk-mode appliance UI**
+- **Touch-first appliance UI**
 
 ---
 
@@ -100,22 +99,22 @@ Main Unit runtime host and composition root.
 
 Responsibilities:
 
-- Start the configured Main Unit without requiring the web UI.
+- Start the configured Main Unit without requiring the UI process.
 - Register application services and infrastructure implementations.
 - Run hosted background services for MQTT, telemetry ingestion, heartbeat processing, automation scheduling, command dispatch, retries, and persistence.
 - Load persisted configuration, topology, automation rules, and runtime state during startup.
-- Maintain operational state independently from browser sessions and UI component lifecycle.
+- Maintain operational state independently from UI lifecycle.
 
 #### `Greenhouse.UI`
 
-Optional thin ASP.NET Core Blazor Web App.
+Optional thin Flutter touchscreen application rendered via `flutter-pi`.
 
 Responsibilities:
 
-- Host the web dashboard.
+- Host the local touchscreen dashboard experience.
 - Register UI presentation services and backend API clients.
 - Provide the local appliance UI.
-- Support future kiosk-mode browser usage.
+- Support direct on-device touch interaction.
 - Display state returned by backend API calls.
 - Initiate user-driven use cases through backend API calls.
 - Poll backend status resources or connect to documented realtime read channels for workflow progress.
@@ -128,16 +127,6 @@ Must not:
 - Host backend API endpoints.
 - Call application services, repositories, BLE adapters, MQTT adapters, or database contexts directly.
 - Own BLE onboarding or Edge Unit reconfiguration workflow state.
-
-Use:
-
-```text
-Template: Blazor Web App
-Interactive render mode: Server
-Interactivity location: Global
-Authentication: None
-Top-level statements: disabled
-```
 
 #### `Greenhouse.Api`
 
@@ -175,7 +164,7 @@ Responsibilities:
 - `IMessagingService` contract
 - message envelope model
 
-This project should not depend on ASP.NET Core, MQTTnet, EF Core, SQLite, or Blazor.
+This project should not depend on ASP.NET Core, MQTTnet, EF Core, SQLite, or UI framework types.
 
 #### `Greenhouse.Mqtt`
 
@@ -223,7 +212,7 @@ The Main Unit handles:
 - Telemetry ingestion.
 - Actuator command dispatch.
 - Historical persistence.
-- Web dashboard.
+- optional local touchscreen dashboard.
 - Backend REST API.
 - Automation rules.
 - Alerts and notifications.
@@ -244,13 +233,11 @@ For Phase 1, prioritize:
 
 ---
 
-## Blazor Web App Instructions
+## Flutter UI Instructions
 
-Use a thin Blazor Web App for the dashboard.
+Use a thin Flutter UI rendered through `flutter-pi` for the on-device dashboard.
 
-The dashboard is intended to run in Chromium kiosk mode on the Raspberry Pi, but it should also work from a desktop browser on the same LAN.
-
-The Blazor app runs separately from the backend. It calls backend API endpoints and renders the returned state. It must not reference backend implementation projects or invoke application services directly.
+The Flutter app runs separately from the backend. It calls backend API endpoints and renders the returned state. It must not reference backend implementation projects or invoke application services directly.
 
 Design UI components for touch use:
 
@@ -328,7 +315,7 @@ Do not use top-level statements.
 Use this style:
 
 ```csharp
-namespace Greenhouse.UI;
+namespace Greenhouse.Api;
 
 
 public sealed class Program
@@ -944,7 +931,7 @@ Bad messages should be logged and ignored or recorded as malformed events by the
 
 ## Application Services
 
-Create application services behind the backend API rather than placing logic in Blazor components or API endpoint handlers.
+Create application services behind the backend API rather than placing logic in UI components or API endpoint handlers.
 
 Suggested services:
 
@@ -964,7 +951,7 @@ public interface ITelemetryService
 ```
 
 - Backend API handlers should call these services through application commands or queries.
-- Blazor components should call backend APIs and must not call these services directly.
+- UI components should call backend APIs and must not call these services directly.
 - UI and API code should not directly publish MQTT messages or manipulate storage.
 - Concrete implementation of these services should be injected using inversion of control - IoC
 - Do not use a service locator pattern, eg: `get<TService>();`
@@ -1002,7 +989,7 @@ Routing separation:
 
 Keep setup, onboarding, and reconfiguration implementation aligned with Clean Architecture:
 
-- Blazor components should collect user input and display backend API state only.
+- UI components should collect user input and display backend API state only.
 - Main setup and Edge Unit onboarding components should call backend APIs, not application services or use cases directly.
 - Backend API handlers should call application services or use cases.
 - Application services should coordinate validation, persistence, BLE operations, MQTT operations, and operating-system integration.
@@ -1010,8 +997,8 @@ Keep setup, onboarding, and reconfiguration implementation aligned with Clean Ar
 - `INetworkService` is the application boundary for network status, connection attempts, and future network events or network changes.
 - Domain/configuration models should live outside the UI project.
 - Storage implementation details should stay behind repository or persistence abstractions.
-- Do not put setup or onboarding persistence logic directly in Blazor components.
-- Do not put BLE scan, pairing, provisioning, heartbeat waiting, timeout, retry, or cancellation logic directly in Blazor components.
+- Do not put setup or onboarding persistence logic directly in UI components.
+- Do not put BLE scan, pairing, provisioning, heartbeat waiting, timeout, retry, or cancellation logic directly in UI components.
 - Do not hard-code setup state, onboarding state, or general configuration in MQTT handlers.
 
 General configuration may be represented by a model such as `MainConfig`.
@@ -1298,9 +1285,8 @@ or create scopes explicitly.
 ### Milestone 1: Empty App Foundation
 
 - Create Main Unit runtime host.
-- Create optional Blazor Web App dashboard.
+- Create optional Flutter UI dashboard.
 - Disable top-level statements.
-- Use Interactive Server / Global interactivity for the dashboard.
 - Add initial project structure.
 - Add basic dashboard page.
 - Show empty dashboard states for missing Edge Units and rules.
@@ -1366,7 +1352,7 @@ Prefer:
 Avoid:
 
 - Top-level statements.
-- Direct MQTT calls from Blazor components.
+- Direct MQTT calls from UI components.
 - Business logic in UI components.
 - Tight coupling in dependencies or naming conventions.
 - Technology-specific names in core contracts.
@@ -1433,8 +1419,7 @@ Phase 1 deployment should be simple:
 - Run as a .NET app on Raspberry Pi Debian Bookworm.
 - Mosquitto runs as a system service.
 - Main Unit backend eventually runs as a systemd service.
-- Thin Blazor UI may run as a separate local web app or static/web-hosted client.
-- Chromium can later launch in kiosk mode pointed at the local dashboard.
+- Thin Flutter UI runs as a separate local touchscreen app via `flutter-pi`.
 
 Do not require Docker for the first working version.
 
@@ -1450,23 +1435,21 @@ Future deployment may use:
 
 ## Kiosk UI Direction
 
-The appliance-like interface will eventually run in a browser on the Pi display.
+The appliance-like interface runs as a Flutter touchscreen app on the Pi display using `flutter-pi`.
 
-The thin Blazor UI should serve the dashboard locally, for example:
+The UI process should start locally after boot and connect to backend API endpoints over loopback, for example:
 
 ```text
-http://localhost:5000
+http://127.0.0.1:5000
 ```
 
-Chromium kiosk mode can point to this address.
-
-The control logic must not depend on the kiosk browser being open.
+The control logic must not depend on the touchscreen UI process being active.
 
 The backend must continue running if:
 
-- Chromium crashes.
+- The UI process crashes.
 - The touchscreen is disconnected.
-- A remote browser is used instead.
+- A remote client is used instead.
 
 ---
 
@@ -1534,7 +1517,7 @@ When coding against the current project docs, normalize the following minor inco
 The first useful deliverable should be:
 
 ```text
-A Main Unit runtime running on the Raspberry Pi that ingests MQTT heartbeat messages from ESP32 devices, records/upserts those devices into the Main Unit device registry, and exposes that state to an optional Blazor dashboard.
+A Main Unit runtime running on the Raspberry Pi that ingests MQTT heartbeat messages from ESP32 devices, records/upserts those devices into the Main Unit device registry, and exposes that state to an optional local dashboard UI.
 ```
 
 Do not begin with full automation rules, OTA, AI, authentication, cloud sync, or mobile apps.

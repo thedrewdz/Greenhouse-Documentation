@@ -120,13 +120,13 @@ For canonical guidance, use:
 
 - Date: 2026-06-10
 - Owner: Codex documentation session
-- Goal: Clarify that the Main Unit backend runs independently from the web UI and that the UI is a thin Blazor client over backend REST APIs.
+- Goal: Clarify that the Main Unit backend runs independently from the local UI and that the UI is a thin Flutter client over backend REST APIs.
 - Completed:
-	- Updated architecture docs to require a headless-capable Main Unit runtime that can maintain state, process MQTT, dispatch commands, and expose backend APIs without the web UI running.
+	- Updated architecture docs to require a headless-capable Main Unit runtime that can maintain state, process MQTT, dispatch commands, and expose backend APIs without the UI running.
 	- Split UI and backend responsibilities:
 		- `Greenhouse.Runtime` owns long-lived runtime services.
 		- `Greenhouse.Api` exposes backend REST API endpoints.
-		- `Greenhouse.UI` is a thin Blazor dashboard that calls backend APIs and does not host API endpoints or lifecycle-critical services.
+		- `Greenhouse.UI` is a thin Flutter dashboard app (via `flutter-pi`) that calls backend APIs and does not host API endpoints or lifecycle-critical services.
 	- Documented REST expectations for UI-facing calls:
 		- requests are stateless
 		- repeated mutating calls must not duplicate backend work

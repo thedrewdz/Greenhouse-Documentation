@@ -25,7 +25,7 @@ Persisted state may include:
 - heartbeat-derived liveness snapshots
 - onboarding/reconfiguration state
 
-Persisted state is owned by the Main Unit runtime, not by the web UI. The configured Main Unit must be able to reconstruct operational state from persistence and resume runtime behavior during headless startup.
+Persisted state is owned by the Main Unit runtime, not by the UI. The configured Main Unit must be able to reconstruct operational state from persistence and resume runtime behavior during headless startup.
 
 ## Repository And State Store Rules
 

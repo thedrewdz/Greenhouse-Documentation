@@ -10,7 +10,7 @@ Core physical components include:
 - Actuator Edge Units
 - Local Database
 - Automation Engine
-- Web Interface
+- Local Touchscreen UI (Flutter via `flutter-pi`)
 - Decoupled Main Unit runtime services
 - Future AI Services
 - Optional Cloud Services
@@ -87,14 +87,14 @@ The Main Unit handles:
 - automation rules
 - telemetry ingestion
 - historical persistence
-- optional thin web UI
+- optional thin local touchscreen UI
 - backend REST API
 - notifications
 - OTA coordination
 - AI orchestration
 - future cloud synchronization
 
-After setup is complete, the Main Unit runtime must be able to start and operate without the web UI. The automation engine, MQTT handling, command dispatch, backend REST API, and persisted state remain backend/runtime responsibilities.
+After setup is complete, the Main Unit runtime must be able to start and operate without the UI process. The automation engine, MQTT handling, command dispatch, backend REST API, and persisted state remain backend/runtime responsibilities.
 
 Onboarding and provisioning responsibilities:
 - host BLE onboarding service for unprovisioned Edge Units

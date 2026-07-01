@@ -26,7 +26,7 @@ Examples:
 - MQTT adapter implements generic message transport ports such as `IMessagingService`.
 - Persistence adapter implements repository or state-store ports.
 - BLE adapter implements Edge Unit onboarding transport ports.
-- Backend API adapter exposes RESTful resources over application contracts for the web UI and other local clients.
+- Backend API adapter exposes RESTful resources over application contracts for the local UI and other local clients.
 - Notification adapter implements user notification ports.
 
 `IMessagingService` is a transport abstraction, not a domain router. It should move message envelopes across MQTT and notify subscribers that a message arrived. It must not parse message content into Heartbeat, Telemetry, command acknowledgement, read response, onboarding, or reconfiguration models.
@@ -36,13 +36,13 @@ Examples:
 - MQTT payload DTOs stay near MQTT adapter boundaries.
 - Generic message envelopes may cross the messaging service boundary when they contain transport metadata and raw payload content only.
 - API request/response DTOs stay near backend API presentation boundaries.
-- Web UI view models stay in the web UI and must be translated to backend API request/response DTOs.
+- UI view models stay in the UI and must be translated to backend API request/response DTOs.
 - Database records stay near persistence boundaries.
 - Domain/application code should receive named domain or application models.
 
 ## UI API Rules
 
-The web UI must communicate with the Main Unit backend through backend-exposed API calls. It must not call application services, infrastructure services, BLE adapters, MQTT adapters, repositories, or database contexts directly.
+The UI must communicate with the Main Unit backend through backend-exposed API calls. It must not call application services, infrastructure services, BLE adapters, MQTT adapters, repositories, or database contexts directly.
 
 UI-facing API calls must be RESTful:
 
