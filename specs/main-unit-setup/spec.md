@@ -276,11 +276,13 @@ DeleteAsync()                  → Task
 ```
 IsOnlineAsync()                    → Task<bool>
 GetCurrentNetworkNameAsync()       → Task<string?>
+GetLocalAddressAsync()             → Task<string?>   (e.g. "192.168.1.50"; null if offline)
 ConnectAsync(networkName, password?) → Task<ConnectResult>
 ```
 
-The concrete adapter (`NetworkManagerAdapter` in `Greenhouse.Storage` or a dedicated infra
-project) implements this via the OS network manager. See Open Questions for the mechanism choice.
+The concrete adapter (`NetworkManagerAdapter`) implements this via the OS network manager.
+`GetLocalAddressAsync` returns the Main Unit's primary local IPv4 address, used by the Edge Unit
+onboarding flow to derive `mqtt_broker_uri` (e.g. `mqtt://192.168.1.50:1883`).
 
 ## API Contracts
 

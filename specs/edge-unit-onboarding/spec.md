@@ -4,7 +4,7 @@
 
 Define the first-time onboarding flow for new Edge Units using BLE as the default provisioning channel.
 
-Decision record is maintained in the firmware repository ADR set.
+Decision record: [ADR 0004 — BLE-first onboarding](../../adr/0004-ble-first-onboarding.md) in the documentation repository.
 
 This spec covers:
 
@@ -177,6 +177,5 @@ Bootstrap completion note:
 
 ## Open Questions
 
-- Should mqtt_broker_uri remain explicit or move to Main Unit hostname discovery after initial onboarding?
 - What is the exact factory-reset gesture and timeout policy for re-entering Provisioning Mode?
 - Should heartbeat_interval_ms be editable by user onboarding flow in Phase 1 UI?

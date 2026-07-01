@@ -10,14 +10,14 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 
 ## Preconditions and Assumptions
 
-- Main Unit setup is complete.
+- Main Unit setup is complete and WiFi credentials are stored in the `WifiCredentials` table.
 - The Main Unit backend can scan for advertising Edge Units and pair over BLE.
 - Unprovisioned Edge Units can enter Provisioning Mode and advertise over BLE.
 - The Main Unit receives runtime heartbeats on `gh/heartbeat` after onboarding.
 - The Main Unit is the source of truth for runtime configuration and slot mapping.
 - Edge Units do not persist long-term runtime configuration in Phase 1 beyond the accepted provisioning values required by the BLE onboarding contract.
-- The UI is a thin client that starts, cancels, and observes onboarding/reconfiguration through backend API resources.
-- Phase 1 has one active Edge Unit onboarding workflow per Main Unit backend. Separate onboarding sessions for multiple UI instances are not required.
+- The UI is a thin client that starts, cancels, and observes onboarding/reconfiguration through backend API resources and a SignalR hub.
+- Phase 1 supports multiple Edge Units registered to a single Main Unit with no total count limit. Only one onboarding workflow session may be active at a time; concurrent onboarding of multiple Edge Units is not supported.
 
 ## Definitions and Canonical Terms
 
@@ -38,43 +38,44 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 
 ### First-Time Onboarding
 
-- When the user starts Add Edge Unit, the UI triggers the backend-owned onboarding workflow through the backend API.
-- The backend workflow begins BLE scanning and exposes onboarding status for the UI to display.
-- Keep scanning until timeout, explicit cancellation, or selected-device handoff.
-- If the user navigates away, the UI may stop observing the workflow, but navigation alone must not make the UI the owner of BLE cancellation. Explicit cancel actions must call the backend cancellation API.
-- If no Edge Unit is discovered before timeout, the backend marks onboarding as no-device-found and the UI shows a clear no-device state with a Restart action.
+- When the user starts Add Edge Unit, the UI calls `POST /api/onboarding/scan`. The backend begins BLE scanning and publishes discovered device candidates over the SignalR onboarding hub as they are found.
+- Keep scanning until the 30-second timeout, explicit cancellation, or selected-device handoff.
+- If the user navigates away, the UI may stop observing the hub, but navigation alone must not cancel the backend scan. Explicit cancel actions must call the backend cancellation API.
+- If no Edge Unit is discovered before timeout, the backend marks onboarding as `no-device-found` and publishes a state-change event. The UI shows a clear no-device state with a Restart action.
 - While scanning, the backend records each actively advertising Edge Unit as a discovered device candidate for the active onboarding workflow.
-- The UI requests the discovered device candidate list from the backend and displays candidates with identity and signal quality.
-- After the user selects a candidate, the UI sends the selected device to the backend onboarding resource.
-- The backend verifies that the selected device is an active candidate, then pairs with the selected Edge Unit and records pairing status.
-- The UI collects onboarding input for Wi-Fi SSID, Wi-Fi password, MQTT broker URI, and optional heartbeat interval override, then submits it to the backend onboarding resource.
-- When input is valid, the backend sends the provisioning payload required by the BLE onboarding contract.
-- If the Edge Unit rejects the payload, the backend records the error details and the UI displays retry guidance without redefining error semantics.
-- If Wi-Fi or MQTT bootstrap fails after a valid payload, the backend keeps the selected device context and exposes retry or cancellation actions.
-- If first-heartbeat publish fails after MQTT connect, treat it as MQTT bootstrap failure and apply the same bounded retry-budget behavior defined in [../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md), including fallback to BLE provisioning when the MQTT-stage retry budget is exhausted.
-- When the first valid heartbeat arrives from the selected device_id for the active onboarding workflow, the backend persists that heartbeat as the current Edge Unit state and marks onboarding complete.
-- A first heartbeat may also trigger subsequent runtime registration work, but for Phase 1 happy-path onboarding the flow completes at this point.
-- If no valid heartbeat arrives before the onboarding timeout, the backend marks onboarding failed and the UI shows a clear user-facing failure state.
+- The UI displays candidates with identity and signal quality as they arrive via the hub. The user must explicitly tap a candidate to select it even if only one is discovered.
+- After the user selects a candidate, the UI calls `POST /api/onboarding/{device_id}/start`. The backend stops scanning and begins full auto-provisioning:
+  - Reads WiFi credentials from the `WifiCredentials` table.
+  - Derives `mqtt_broker_uri` from the Main Unit's local network address via `INetworkConnector.GetLocalAddressAsync()`.
+  - Omits `heartbeat_interval_ms`; the firmware default (30 000 ms) applies.
+  - Connects to the selected Edge Unit over BLE and sends the provisioning payload.
+- The backend publishes state-change events over the hub throughout provisioning, heartbeat-waiting, and completion phases.
+- If the Edge Unit rejects the payload, the backend records the error details and publishes an error state event. The UI displays retry guidance.
+- If Wi-Fi or MQTT bootstrap fails after a valid payload, the backend keeps the selected device context and exposes retry or cancellation actions via state-change events.
+- If first-heartbeat publish fails after MQTT connect, treat it as MQTT bootstrap failure and apply the same bounded retry-budget behavior defined in [../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md).
+- When the first valid heartbeat arrives from the selected device_id, the backend persists that heartbeat as the current Edge Unit state, marks onboarding complete, and publishes a `mapping-required` state event.
+- If no valid heartbeat arrives before the 90-second onboarding timeout, the backend marks onboarding `failed` and publishes a failure state event.
 - Main Unit does not auto-retry onboarding after timeout.
-- If the user selects Retry from the failure state, the UI triggers the backend-owned onboarding workflow again.
+- If the user selects Retry from the failure state, the UI calls `POST /api/onboarding/scan` to begin a new session.
 
 ### UI / Backend Interaction
 
 - UI-to-backend interactions must use RESTful API resources.
 - API calls must be stateless; the request path, selected `device_id`, action, and request payload must carry the context needed for each request.
-- Mutating workflow calls must be idempotent from the UI client's point of view. Repeating the same `start`, `provision`, or `cancel` request for the same active unit must return the current onboarding state rather than duplicate BLE work.
+- Mutating workflow calls must be idempotent from the UI client's point of view. Repeating the same `start` or `cancel` request for the same active unit must return the current onboarding state rather than duplicate BLE work.
 - The UI must not call BLE adapters, MQTT adapters, repositories, or application services directly.
-- The UI may poll the onboarding resource for discovered devices and workflow status.
-- A socket-based read channel may be added for progress updates, but the backend remains the durable source of truth and state-changing actions still use REST resources.
+- The primary real-time channel is the SignalR hub at `/hubs/onboarding`. The UI subscribes on startup and receives state changes and device discovery events throughout the workflow. Polling `GET /api/onboarding` is the documented fallback if SignalR is unavailable.
 
-Example resource shapes:
+API resource paths:
 
 ```text
-GET /api/onboarding
 POST /api/onboarding/scan
+GET  /api/onboarding
 POST /api/onboarding/{device_id}/start
-POST /api/onboarding/{device_id}/provision
 POST /api/onboarding/{device_id}/cancel
+GET  /api/edge-units
+GET  /api/edge-units/{device_id}
+PUT  /api/edge-units/{device_id}/mapping
 ```
 
 ### Runtime Registration and Slot Mapping
@@ -86,6 +87,176 @@ POST /api/onboarding/{device_id}/cancel
 
 - When a heartbeat arrives from a known Edge Unit and slot topology or module identity differs from stored mapping, show a reconfiguration prompt that identifies the detected changes.
 - When the user confirms reconfiguration, store the new mapping, publish updates to the Edge Unit, and resume normal operation.
+
+## API Contracts
+
+### Onboarding State Values
+
+| `status` | Meaning |
+|---|---|
+| `idle` | No active session |
+| `scanning` | BLE scan in progress |
+| `candidates-ready` | Scan complete; device list available |
+| `provisioning` | BLE payload being sent to selected device |
+| `awaiting-heartbeat` | Payload accepted; waiting for first heartbeat |
+| `mapping-required` | First heartbeat received; runtime mapping needed |
+| `complete` | Mapping stored and published to Edge Unit |
+| `failed` | Error — see `errorCode` and `errorMessage` |
+| `no-device-found` | Scan timed out with no candidates |
+
+### POST /api/onboarding/scan — 202 Accepted
+
+```json
+{ "status": "scanning" }
+```
+
+Returns 409 if an onboarding session is already active.
+
+### GET /api/onboarding — 200 OK (polling fallback)
+
+```json
+{
+  "status": "scanning",
+  "candidates": [
+    { "deviceId": "1ADD5912AF61", "advertisedName": "GH-Edge-1ADD5912AF61", "rssi": -60 }
+  ],
+  "selectedDeviceId": null,
+  "errorCode": null,
+  "errorMessage": null
+}
+```
+
+`candidates` is empty when `status` is `idle`. `errorCode` and `errorMessage` are null unless
+`status` is `failed`.
+
+### POST /api/onboarding/{device_id}/start — 202 Accepted
+
+No request body. The backend derives WiFi credentials, MQTT broker URI, and heartbeat interval
+automatically.
+
+```json
+{ "status": "provisioning", "deviceId": "1ADD5912AF61" }
+```
+
+Returns 404 if `device_id` is not a current candidate. Returns 409 if a different device is
+already selected.
+
+### POST /api/onboarding/{device_id}/cancel — 200 OK
+
+```json
+{ "status": "idle" }
+```
+
+### GET /api/edge-units — 200 OK
+
+```json
+{
+  "edgeUnits": [
+    {
+      "deviceId": "1ADD5912AF61",
+      "advertisedName": "GH-Edge-1ADD5912AF61",
+      "unitName": "East Sensor Unit",
+      "location": "Zone A",
+      "mappingStatus": "acknowledged",
+      "lastHeartbeatAt": "2026-07-01T22:00:00Z"
+    }
+  ]
+}
+```
+
+### GET /api/edge-units/{device_id} — 200 OK / 404
+
+Returns the full registered Edge Unit including last-known slot topology from heartbeat.
+
+```json
+{
+  "deviceId": "1ADD5912AF61",
+  "advertisedName": "GH-Edge-1ADD5912AF61",
+  "unitName": "East Sensor Unit",
+  "location": "Zone A",
+  "mappingVersion": 1,
+  "mappingStatus": "acknowledged",
+  "lastHeartbeatAt": "2026-07-01T22:00:00Z",
+  "slots": [
+    { "slotId": 0, "role": "sensor", "capability": "moisture", "label": "Bed A Moisture", "i2cAddress": "0x25" }
+  ]
+}
+```
+
+`mappingStatus` values: `pending-mapping` | `publish-pending` | `published` | `acknowledged` | `failed`.
+
+### PUT /api/edge-units/{device_id}/mapping — 200 OK / 404 / 422
+
+Used by three flows: initial onboarding mapping, user-initiated reconfiguration, and topology
+drift reconfiguration. The endpoint is identical for all three callers.
+
+Request body:
+
+```json
+{
+  "unitName": "East Sensor Unit",
+  "location": "Zone A",
+  "slots": [
+    { "slotId": 0, "role": "sensor", "capability": "moisture", "label": "Bed A Moisture" }
+  ]
+}
+```
+
+| Field | Required | Constraints |
+|---|---|---|
+| `unitName` | Yes | Non-empty after trim |
+| `location` | Yes | Non-empty after trim |
+| `slots` | Yes | Non-empty; one entry per discovered slot |
+| `slots[].slotId` | Yes | Integer; no duplicates |
+| `slots[].role` | Yes | `sensor` or `actuator` |
+| `slots[].capability` | Yes | Canonical capability name |
+| `slots[].label` | No | Optional display label |
+
+Response (200 OK):
+
+```json
+{
+  "deviceId": "1ADD5912AF61",
+  "unitName": "East Sensor Unit",
+  "location": "Zone A",
+  "mappingVersion": 1,
+  "mappingStatus": "publish-pending"
+}
+```
+
+The backend publishes the runtime configuration to `ghcfg/wr-{device_id}` asynchronously after
+returning 200. The UI observes publish and ack progress via the SignalR hub.
+
+## SignalR Hub Contract
+
+Hub path: `/hubs/onboarding`
+
+### DeviceDiscovered
+
+Published during scanning when a new candidate is found.
+
+```json
+{ "deviceId": "1ADD5912AF61", "advertisedName": "GH-Edge-1ADD5912AF61", "rssi": -60 }
+```
+
+### OnboardingStateChanged
+
+Published on every state transition throughout the workflow.
+
+```json
+{
+  "status": "provisioning",
+  "selectedDeviceId": "1ADD5912AF61",
+  "errorCode": null,
+  "errorMessage": null
+}
+```
+
+`status` values match the onboarding state table above. `errorCode` and `errorMessage` are
+non-null only when `status` is `failed`.
+
+Polling fallback: If SignalR is unavailable, the UI polls `GET /api/onboarding` at a 1-second
+interval. The backend state is always authoritative; SignalR is an observation channel only.
 
 ## Data Contracts and Schemas
 
@@ -251,7 +422,7 @@ If local validation fails:
 2. Given no advertising Edge Unit, when scan reaches 30 seconds, then backend onboarding state becomes no-device-found, the UI shows Restart, and the backend does not keep scanning.
 3. Given multiple advertising Edge Units are discovered during active onboarding scan, when the UI requests `GET /api/onboarding`, then the backend returns all currently active candidates with identity and signal quality.
 4. Given the UI submits `POST /api/onboarding/{device_id}/start`, when that `device_id` is still an active candidate, then the backend pairs with that Edge Unit and records selected-device status.
-5. Given valid onboarding input submitted to `POST /api/onboarding/{device_id}/provision` and accepted provisioning payload, when first valid heartbeat from selected `device_id` arrives within 90 seconds, then onboarding is marked complete and heartbeat state is persisted.
+5. Given the backend receives a valid provisioning payload accepted by the Edge Unit, when the first valid heartbeat from selected `device_id` arrives within 90 seconds, then the backend marks onboarding `mapping-required`, persists the heartbeat state, and publishes an `OnboardingStateChanged` event.
 6. Given onboarding input rejected by BLE provisioning validation, when Edge Unit returns non-zero onboarding `error_code`, then backend onboarding status exposes explicit error details and allows retry without losing selected device context.
 7. Given first heartbeat from a device with no stored runtime mapping, when user submits valid mapping input, then Main Unit publishes configuration on `ghcfg/wr-{device_id}` with required schema fields.
 8. Given runtime configuration publish, when Edge Unit returns ack on `ghcfg/ack-{device_id}`, then ack has matching `message_id`, `device_id`, and `mapping_version` and result is processed exactly once.
