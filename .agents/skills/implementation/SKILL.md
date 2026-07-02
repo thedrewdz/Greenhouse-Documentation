@@ -32,7 +32,6 @@ gh project item-edit --project-id PVT_kwHOClcYbc4BcGuS \
 | Status | Option ID |
 |---|---|
 | Todo | `f75ad846` |
-| In Grooming | `a01c3971` |
 | Ready For Dev | `1e580093` |
 | In Development | `47fc9ee4` |
 | In Review | `a7a0e5d1` |
@@ -83,7 +82,7 @@ gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
 
 Before coding, complete all checks:
 
-1. Determine the branch name for this task. The format is `feature/<issue-number>-<short-kebab-title>` (e.g. `feature/42-edge-unit-heartbeat`). `<issue-number>` is the **GitHub issue number** — never a task alias, epic label, or human-readable shorthand. Use no other prefix. Do not proceed until the branch name conforms to this format.
+1. Determine the branch name for this task. The format is `feature/<issue-number>-<short-kebab-title>` (e.g. `feature/42-edge-unit-heartbeat`). `<issue-number>` is the **GitHub issue number** — never a task alias, epic label, or human-readable shorthand. **If this task has sub-issues (subtasks), use the parent task's issue number and title for the branch name.** Use no other prefix. Do not proceed until the branch name conforms to this format.
 2. Fetch the latest remote state and check whether the branch already exists:
    ```bash
    git fetch origin
@@ -105,11 +104,21 @@ Before coding, complete all checks:
 7. Read the board item, its comments, and linked sub-issues for prior findings and open follow-up notes.
 8. Confirm no open defect sub-issues exist before starting new work on this task.
 
+## Subtask Execution
+
+When an implementation task (epic or issue) has sub-issues (subtasks), these rules govern execution:
+
+- **One branch for all subtasks.** All subtasks are worked on the same feature branch, named after the **parent** issue: `feature/<parent-issue-number>-<parent-kebab-title>`. Do not create a separate branch per subtask.
+- **Complete all subtasks in one session.** A single implementation session must complete all subtasks under a parent. Do not end a session with some subtasks finished and others pending.
+- **Dependency order over board order.** Board order applies only to top-level tasks and epics. Between subtasks, dependency dictates execution order. A subtask may not be started before its declared dependencies are done, but subtasks without dependencies may begin immediately regardless of board position.
+- **Set each subtask to In Development at start.** When beginning work, set every sub-issue that will be completed in this session to **In Development** as well as the parent task (see Workflow step 3).
+- **Finalize with parent In Review.** When all subtasks pass quality gates: commit and push all changes, create or update the pull request, set each subtask to **In Review**, then set the **parent** task to **In Review**.
+
 ## Workflow
 
 1. Read the spec referenced in the board item, repo `AGENTS.md`, and relevant technical skills.
 2. Continue only when the board item status is **Ready For Dev** or **In Development**. If not, comment on the issue with the required upstream action and stop.
-3. Set the board item to **In Development** and verify the status change using the board verify command (see Board Operations). If any sub-issues for this task are tracked on the project board, set each one being worked in this pass to **In Development** as well. **Do not write any code until all status updates are confirmed.**
+3. Set the board item to **In Development** and verify the status change using the board verify command (see Board Operations). If this task has sub-issues that will be completed in this session, set **all** of them to **In Development** as well (see Subtask Execution). **Do not write any code until all status updates are confirmed.**
 4. Read all comments and linked sub-issues on the board item to resolve any prior findings before starting new work.
 5. Map each planned change to an architectural layer before coding.
 6. For recurring integration message streams, such as heartbeat, acknowledgements, and state updates, define handling through a cross-cutting messaging abstraction instead of feature-lifecycle-specific application services.
@@ -118,7 +127,7 @@ Before coding, complete all checks:
 9. Run local verification.
 10. For each defect found during local verification, fix it before advancing. Do not file sub-issues for defects — defect tracking is the responsibility of the test and QA agents.
 11. If a documentation hole is discovered at any point, stop immediately. Comment on the board item describing the gap, file a new standalone issue in `Greenhouse-Documentation` referencing the current task URL (see Board Operations), set the board item to **Todo**, and stop. Do not continue implementation against incomplete or ambiguous documentation.
-12. If any other blocker prevents progress — such as an unresolved architectural decision, missing dependency, or unavailable external service — stop immediately. Comment on the board item describing the blocker and the action needed to unblock it. Set the board item to **In Grooming** if the blocker requires a grooming decision or clarification, or **Todo** if the blocker is external or requires re-scoping. Do not leave the board item at **Ready For Dev** or **In Development** while blocked.
+12. If any other blocker prevents progress — such as an unresolved architectural decision, missing dependency, or unavailable external service — stop immediately. Comment on the board item describing the blocker and the action needed to unblock it. Set the board item to **Todo**. Do not leave the board item at **Ready For Dev** or **In Development** while blocked.
 13. When the quality gate passes and no open defect sub-issues remain, commit all outstanding changes with a message referencing the issue number, then push the feature branch:
     ```bash
     git add -A
@@ -126,7 +135,7 @@ Before coding, complete all checks:
     git push origin <branch-name>
     ```
 14. Create a pull request targeting `main`. If this is feedback remediation and a PR already exists, update its description with a summary of the changes made in this pass. Record the PR name and URL on the issue description under a `## Pull Request` heading (see Board Operations).
-15. Set the board item to **In Review** (see Board Operations).
+15. If the task has sub-issues, set each sub-issue to **In Review**. Then set the board item (or parent task) to **In Review** (see Board Operations and Subtask Execution).
 
 ## Infrastructure Abstraction Rules
 
@@ -154,7 +163,8 @@ A **policy** is a specific business rule composed on top of a mechanism: "send a
 - [ ] Relevant tests are run and/or limitations are documented.
 - [ ] All defects found during implementation are fixed; no known defects remain.
 - [ ] If a documentation hole was found, work stopped immediately, the hole was filed in `Greenhouse-Documentation`, and the board item was returned to **Todo**.
-- [ ] If any other blocker was encountered, work stopped immediately, the blocker was commented on the issue, and the board item was returned to **In Grooming** or **Todo**.
+- [ ] If any other blocker was encountered, work stopped immediately, the blocker was commented on the issue, and the board item was returned to **Todo**.
+- [ ] If subtasks exist: all were completed in this session, all are set to **In Review**, and the parent task is set to **In Review**.
 - [ ] No open sub-issues remain, or carry-forward rationale is recorded as a comment on the issue.
 
 ## Architecture Execution Checklist
@@ -178,10 +188,11 @@ If any check fails, fix placement or abstraction boundaries before continuing.
 - Verification evidence is captured.
 - Architecture execution checklist is fully satisfied.
 - Infrastructure abstraction rules are fully satisfied.
-- Board item is set to **In Review** on passing, or **Todo**/**In Grooming** if an early stop occurred.
+- Board item is set to **In Review** on passing, or **Todo** if an early stop occurred.
 - All defects found during implementation are fixed before advancing.
 - Any documentation hole found causes an immediate stop; the hole is filed in `Greenhouse-Documentation` and the board item is returned to **Todo**.
-- Any other blocker causes an immediate stop with a comment; the board item is returned to **In Grooming** or **Todo** — never left at **Ready For Dev** or **In Development** while blocked.
+- Any other blocker causes an immediate stop with a comment; the board item is returned to **Todo** — never left at **Ready For Dev** or **In Development** while blocked.
+- If subtasks exist: all were completed in this session on the parent's feature branch; each subtask and the parent task are set to **In Review**.
 - No open sub-issues remain before marking the parent task **Done**.
 - Changes are pushed upstream.
 - A new pull request exists when work is not feedback remediation.

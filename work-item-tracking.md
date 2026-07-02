@@ -15,6 +15,41 @@ This complements the [feature delivery harness](workflows/feature-delivery-harne
 dossier under `specs/<spec-name>/` remains the durable source of truth for feature-level work,
 and the tracking issue is its entry on the board.
 
+## Task types and status flows
+
+Every GitHub issue is either a **documentation task** or an **implementation task**. The owning
+repository determines the type.
+
+### Documentation tasks
+
+Issues filed in `thedrewdz/Greenhouse-Documentation`.
+
+- Status progression: **Todo → In Grooming → Done**
+- `In Grooming` is the active working state (grooming is a type of documentation work and uses the same skill).
+- Executed directly against the `main` branch — no feature branch or pull request required.
+- Closed by committing directly to `main` with `Closes #N` in the commit message.
+- Use the `documentation` skill for all documentation and grooming tasks.
+
+### Implementation tasks
+
+Issues filed in any code repository (`services`, `ui`, `edge`, `peripherals`).
+
+- Status progression: **Todo → Ready For Dev → In Development → In Review → [ Ready For Dev → In Development → In Review (× n) ] → Done**
+- The loop (→ Ready For Dev → In Development → In Review) repeats until quality gates pass.
+- Executed on a short-lived feature branch; merged to `main` only via a reviewed pull request.
+- Use the `implementation` skill for all implementation tasks.
+
+### Feature origination rule
+
+Every new feature must begin life as a **documentation task** in `thedrewdz/Greenhouse-Documentation`.
+A documentation task produces:
+
+- Changes to the documentation repository (spec dossiers, updated canonical docs), and
+- Zero or more implementation tasks filed in their respective code repositories.
+
+No implementation task should be created without a corresponding documentation task having
+established the spec first.
+
 ## Single prioritized view
 
 All issues across the Greenhouse repositories flow into one user-level project board,
@@ -26,7 +61,9 @@ All issues across the Greenhouse repositories flow into one user-level project b
   of truth for "what's next" (top = highest). The board's **Priority** field (P0–P3) is
   *severity metadata* for filtering, not the ordering key.
 - The **Type** field (Bug / Feature / Update / Tech-debt / Standards) classifies the work.
-- Work proceeds one item at a time, top-down.
+- **Board order applies to top-level tasks and epics only.** Subtasks (sub-issues) are not
+  ordered by board position — they are executed in dependency order (see Subtask execution rules below).
+- Work proceeds one top-level item at a time, top-down.
 
 ## Filing an issue (recipe)
 
@@ -51,6 +88,22 @@ For multi-part efforts, create a tracking **epic** issue and attach the parts as
 detailed design/evidence dossier in `specs/<spec-name>/` (or `.agent-output/specs/<spec-name>/`
 in implementation repos) and link it from the epic.
 
+### Subtask execution rules (implementation tasks)
+
+When an implementation task (epic or issue) has sub-issues, the following rules govern execution:
+
+- **Same feature branch for all subtasks.** All subtasks are worked on the same feature branch,
+  named after the **parent** issue: `feature/<parent-issue-number>-<parent-kebab-title>`. Do not
+  create separate branches per subtask.
+- **Complete all subtasks together.** A single implementation session must complete all subtasks.
+  Do not close a session with some subtasks finished and others pending.
+- **Dependency order over board order.** Dependencies between subtasks dictate the order they are
+  executed. Complete subtasks in dependency order, ignoring their position on the board. Board
+  order only applies to top-level tasks and epics.
+- **Set parent to In Review when all subtasks are done.** When all subtasks have been completed
+  and pass quality gates: commit and push all changes, create or update the pull request, set
+  each subtask to **In Review**, then set the **parent** task to **In Review**.
+
 ## Relationship to spec status
 
 Canonical milestone status still lives in `specs/<spec-name>/status.md` and execution status in
@@ -61,6 +114,8 @@ surfaces it. A spec that is `ready-for-dev` should have a tracking issue so it i
 ## Rules of thumb
 
 - Do not begin non-trivial work that lacks an issue.
+- All new features must begin as a documentation task before implementation tasks are created.
+- Use the `documentation` skill for documentation and grooming tasks; grooming is a type of documentation work.
 - If you discover new work mid-task, file a follow-up issue rather than silently expanding scope.
 - Close issues through PRs (`Closes #N`) — or, for documentation-only changes committed
   directly to `main` per [branching-strategy.md](branching-strategy.md), via `Closes #N` in the
