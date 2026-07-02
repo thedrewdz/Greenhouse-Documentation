@@ -37,3 +37,7 @@
 - `2026-07-01` | `new → ready-for-dev` | `Documentation Agent` | Full API and data contracts
   added; services and UI work split into separate GitHub epics in `Greenhouse-Services` and
   `Greenhouse-WebUI`.
+- `2026-07-02` | `ready-for-dev` (no change) | `Documentation Agent` | Grooming pass for
+  Greenhouse-Services#37: corrected concrete adapter name from `NetworkManagerAdapter` to
+  `NmcliNetworkAdapter` in `Greenhouse.Network`; noted `AddGreenhouseNetwork()` extension and
+  deferred `GetLocalAddressAsync` implementation. Greenhouse-Services#37 advanced to Ready For Dev.

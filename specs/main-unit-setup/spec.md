@@ -280,9 +280,13 @@ GetLocalAddressAsync()             → Task<string?>   (e.g. "192.168.1.50"; nul
 ConnectAsync(networkName, password?) → Task<ConnectResult>
 ```
 
-The concrete adapter (`NetworkManagerAdapter`) implements this via the OS network manager.
+The concrete adapter (`NmcliNetworkAdapter`) in `Greenhouse.Network` implements this port via
+`nmcli` subprocess calls. The extension method `AddGreenhouseNetwork()` wires it in the
+composition root.
 `GetLocalAddressAsync` returns the Main Unit's primary local IPv4 address, used by the Edge Unit
-onboarding flow to derive `mqtt_broker_uri` (e.g. `mqtt://192.168.1.50:1883`).
+onboarding flow to derive `mqtt_broker_uri` (e.g. `mqtt://192.168.1.50:1883`). Implementation
+of `GetLocalAddressAsync` is deferred to the Edge Unit onboarding epic; it may return `null`
+until that epic is complete.
 
 ## API Contracts
 
