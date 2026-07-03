@@ -83,6 +83,7 @@ gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
 - Scenario coverage is explicit.
 - Defects and mismatches are reproducible and recorded as comments on the board item.
 - Recommendation is evidence-based.
+- For features spanning a process boundary (e.g. UI↔services, services↔broker, services↔Edge Unit), the recommendation states explicitly whether live cross-process integration was validated or is deferred with a reason. Mocked/stubbed-only coverage is called out as a residual risk, never presented as end-to-end validation.
 - Board item is set to **Done** only on a `Go` recommendation with all sub-issues closed.
 - All defects are filed as sub-issues before advancing status.
 - All documentation holes and spec mismatches are filed as new Todo issues in `Greenhouse-Documentation`.
