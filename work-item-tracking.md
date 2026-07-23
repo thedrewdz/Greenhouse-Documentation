@@ -24,11 +24,18 @@ repository determines the type.
 
 Issues filed in `thedrewdz/Greenhouse-Documentation`.
 
+**Feature epics** (multi-stack work that produces implementation tasks):
+- Status progression: **Todo → In Discovery → Ready For Grooming → In Grooming → Ready For Dev**
+- Sub-tasks created during grooming in code repositories then progress through the implementation task flow.
+- The epic itself closes when all sub-tasks reach **Done**.
+
+**Documentation-only tasks** (no implementation tasks required):
 - Status progression: **Todo → In Grooming → Done**
-- `In Grooming` is the active working state (grooming is a type of documentation work and uses the same skill).
+- `In Grooming` is the active working state.
 - Executed directly against the `main` branch — no feature branch or pull request required.
 - Closed by committing directly to `main` with `Closes #N` in the commit message.
-- Use the `documentation` skill for all documentation and grooming tasks.
+
+- Use the `ba-po` skill for all discovery, epic creation, and grooming work.
 
 ### Implementation tasks
 
@@ -42,13 +49,17 @@ Issues filed in any code repository (`services`, `ui`, `edge`, `peripherals`).
 ### Feature origination rule
 
 Every new feature must begin life as a **documentation task** in `thedrewdz/Greenhouse-Documentation`.
-A documentation task produces:
+Use the `ba-po` skill to run discovery (Phase 1) and grooming (Phase 2). Discovery produces:
 
-- Changes to the documentation repository (spec dossiers, updated canonical docs), and
-- Zero or more implementation tasks filed in their respective code repositories.
+- The epic issue in `Greenhouse-Documentation` with long-form spec dossier, and
+- Board status advances from **In Discovery** to **Ready For Grooming**.
 
-No implementation task should be created without a corresponding documentation task having
-established the spec first.
+Grooming produces:
+
+- Implementation sub-tasks filed in their respective code repositories, and
+- Board status advances to **Ready For Dev** for each task and the epic.
+
+No implementation task should be created without the `ba-po` skill having completed grooming and set the spec to `ready-for-dev`.
 
 ## Single prioritized view
 
@@ -115,7 +126,7 @@ surfaces it. A spec that is `ready-for-dev` should have a tracking issue so it i
 
 - Do not begin non-trivial work that lacks an issue.
 - All new features must begin as a documentation task before implementation tasks are created.
-- Use the `documentation` skill for documentation and grooming tasks; grooming is a type of documentation work.
+- Use the `ba-po` skill for discovery, epic creation, and grooming. Use the `implementation` skill for all code work.
 - If you discover new work mid-task, file a follow-up issue rather than silently expanding scope.
 - Close issues through PRs (`Closes #N`) — or, for documentation-only changes committed
   directly to `main` per [branching-strategy.md](branching-strategy.md), via `Closes #N` in the

@@ -2,17 +2,13 @@
 
 This folder contains Codex-discoverable reusable skills for both Greenhouse documentation domains.
 
-## Shared Skills
+## Workflow Skills
 
-- documentation/
-  - Produces complete implementation-ready documentation and runs one-question-at-a-time plan interrogation when scope is ambiguous.
-- grill-with-docs/
-  - Challenges plans against glossary terms and ADR decisions, then updates docs inline.
+- ba-po/
+  - **Primary entry point for all new feature work.** Phase 1 (Discovery): distills a concept into a well-formed epic with long-form documentation. Phase 2 (Grooming): breaks the epic into single-stack, dependency-ordered tasks ready for development. Grills relentlessly through both phases.
 
 ## Role Skills
 
-- documentation/
-  - Governs documentation-role output quality and handoff readiness while serving as the canonical documentation skill.
 - implementation/
   - Governs implementation-role execution from accepted specs.
 - test/
@@ -33,10 +29,19 @@ This folder contains Codex-discoverable reusable skills for both Greenhouse docu
 - qa/references/qa-evaluation.md
   - Runs scenario-level QA validation and release-readiness checks.
 
+## Standards References
+
+- documentation/
+  - Documentation standards reference: required spec structure, style rules, and consistency rules. Cited by other skills — not a standalone workflow skill. For the full discovery and grooming workflow, use `ba-po/`.
+
+## Retired Skills
+
+- grill-with-docs/ — Retired. Superseded by `ba-po/`, which incorporates plan interrogation and docs grilling as part of the full discovery workflow.
+
 ## Usage Guidance
 
-1. Start with the documentation skill for scope, naming, contract clarity, and Plan Interrogation Method behavior.
-2. Use role and cross-cutting engineering skills as needed for the task.
+1. Start with `ba-po` for all new feature work — discovery through grooming.
+2. Use role and cross-cutting engineering skills as needed for the implementation lifecycle.
 3. For implementation in consumer repositories, pair these docs skills with repository-local implementation skills.
 4. Keep terms aligned with the selected CONTEXT file and ADRs.
 5. Enforce `spec-status.md` entry and exit gates in `.agent-output/specs/<spec-name>/` for every stage.

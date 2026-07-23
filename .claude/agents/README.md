@@ -11,6 +11,7 @@ The underlying skills they reference in `.agents/skills/` are shared and tool-ne
 
 | File | Role | Use when |
 |---|---|---|
+| `ba-po-agent.md` | BA/PO Agent | All new feature work — discovery (concept → epic + docs) and grooming (epic → ready-for-dev tasks) |
 | `documentation-agent.md` | Documentation Agent | Writing or refining specs, canonical docs, terminology, acceptance criteria |
 | `implementation-agent.md` | Implementation Agent | Implementing accepted specs in a code repository |
 | `test-agent.md` | Test Agent | Writing tests, closing coverage gaps, reporting residual risk |
@@ -37,7 +38,7 @@ Or reference the profile explicitly when directing Claude:
 The roles map to stages in `workflows/feature-delivery-harness.md`:
 
 ```
-Documentation â†’ Implementation â†’ Test â†’ Code Review â†’ QA â†’ Retrospective
+BA/PO (Discovery + Grooming) → Implementation → Test → Code Review → QA → Retrospective
 ```
 
 Each role's re-entry behaviour and status gate rules are defined in its own profile file.

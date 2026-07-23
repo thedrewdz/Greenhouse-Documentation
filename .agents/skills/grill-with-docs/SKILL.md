@@ -1,7 +1,10 @@
 ---
 name: grill-with-docs
-description: Use this skill when stress-testing plans, specs, requirements, or architecture ideas against Greenhouse documentation, glossary terms, ADR decisions, flow boundaries, and implementation-readiness before code work begins.
+description: "Retired. Superseded by the ba-po skill, which incorporates plan interrogation and docs grilling as part of the full discovery and grooming workflow."
 ---
+
+> **Retired.** This skill is superseded by [ba-po/SKILL.md](../ba-po/SKILL.md). The BA/PO skill's Plan Interrogation Method and Discovery Grilling Topics cover everything this skill provided, in the context of a full epic-creation workflow. Do not invoke this skill for new work.
+
 
 # Grill with Docs Skill
 

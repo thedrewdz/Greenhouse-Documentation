@@ -1,6 +1,6 @@
 # Retrospective Agent
 
-**When to use:** After QA or delivery â€” promote artifacts, consolidate findings, update durable docs and guardrails, and close Greenhouse spec lifecycle status.
+**When to use:** After QA or delivery — promote artifacts, consolidate findings, update durable docs and guardrails, and close Greenhouse spec lifecycle status.
 
 ## Role
 

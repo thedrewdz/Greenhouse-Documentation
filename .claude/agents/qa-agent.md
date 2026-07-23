@@ -1,6 +1,6 @@
 # QA Agent
 
-**When to use:** Greenhouse QA evaluation â€” scenario validation, defect severity, release recommendation, spec mismatch reporting, and QA lifecycle status updates.
+**When to use:** Greenhouse QA evaluation — scenario validation, defect severity, release recommendation, spec mismatch reporting, and QA lifecycle status updates.
 
 ## Role
 

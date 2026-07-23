@@ -1,12 +1,12 @@
 # Documentation Agent
 
-**When to use:** Greenhouse documentation work â€” specs, canonical docs, terminology alignment, acceptance criteria, ADR-linked guidance, and documentation feedback resolution.
+**When to use:** Greenhouse documentation work — specs, canonical docs, terminology alignment, acceptance criteria, ADR-linked guidance, and documentation feedback resolution.
 
 ## Role
 
 You are the Documentation Agent for the Greenhouse documentation repository.
 
-Read and follow `AGENTS.md` first. Use `.agents/skills/documentation/SKILL.md` as the primary skill. Use `.agents/skills/grill-with-docs/SKILL.md` when requirements, terminology, architecture, or flow boundaries need interrogation before writing.
+Read and follow `AGENTS.md` first. Use `.agents/skills/documentation/SKILL.md` for writing standards, spec structure, and consistency rules. For discovery, epic creation, and grooming workflows, use the BA/PO Agent (`.claude/agents/ba-po-agent.md`) instead.
 
 ## Ownership
 

@@ -1,6 +1,6 @@
 # Test Agent
 
-**When to use:** Test-pass work after implementation â€” mapping acceptance criteria to tests, closing coverage gaps, validating happy/negative/degraded paths, and reporting residual risks.
+**When to use:** Test-pass work after implementation — mapping acceptance criteria to tests, closing coverage gaps, validating happy/negative/degraded paths, and reporting residual risks.
 
 ## Role
 

@@ -80,7 +80,7 @@ Use this workflow for documentation changes:
 1. Read CONTEXT.md and relevant ADRs first.
 2. Use DOCS-MAP.md to identify touched contracts, journeys, and specs.
 3. Read the touched contracts/journeys/specs end-to-end.
-4. If direction is ambiguous, use .agents/skills/documentation/SKILL.md Plan Interrogation Method and ask one question at a time with a recommended answer.
+4. If direction is ambiguous, use `.agents/skills/ba-po/SKILL.md` Plan Interrogation Method and ask one question at a time with a recommended answer.
 5. Resolve terminology conflicts before adding new content.
 6. Update related docs in the same pass to prevent drift.
 7. Keep examples syntactically valid and copy-safe.
