@@ -57,6 +57,9 @@ transport types. GATT UUIDs are private constants inside `Greenhouse.Bluetooth`.
 
 The UI must communicate with the Main Unit backend through backend-exposed API calls. It must not call application services, infrastructure services, BLE adapters, MQTT adapters, repositories, or database contexts directly.
 
+Route naming, HTTP verb usage, the named-command convention for actions, and status codes are
+governed by [rest-api-standards.md](../rest-api-standards.md).
+
 UI-facing API calls must be RESTful:
 
 - Each request must contain all information needed to process that request, aside from persisted backend state.

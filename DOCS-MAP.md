@@ -40,6 +40,8 @@ Load architecture detail documents only when they match the task:
 - [architecture/persistence.md](architecture/persistence.md): storage boundaries, repositories, migrations, telemetry, and configuration state.
 - [architecture/testing.md](architecture/testing.md): test layers, contract tests, integration tests, and acceptance verification.
 
+Read [rest-api-standards.md](rest-api-standards.md) when adding or changing any Main Unit REST endpoint: route naming, HTTP verb usage, the named-command convention for actions, and the canonical status-code table. (Async/MQTT contracts are in [mqtt-topics.md](mqtt-topics.md).)
+
 ## Domain And Journey Docs
 
 Read these when the task touches the named domain or journey:
