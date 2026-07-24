@@ -22,6 +22,7 @@ Read these when the task touches broad architecture, platform boundaries, or cro
 
 - [vision.md](vision.md): product intent, platform outcomes, local-first direction.
 - [system-topology.md](system-topology.md): physical/logical platform makeup, Main Unit and Edge Unit topology, host choices, MQTT broker, deployment assumptions, and future expansion areas.
+- [main-unit-services-deployment.md](main-unit-services-deployment.md): operational procedure for deploying and starting the Main Unit services daemon (prerequisites, automatic first-run EF migration, configuration, launch, subsequent deploys, systemd autostart). Read when deploying or operating the services daemon on a host.
 - [device-model.md](device-model.md): Edge Unit, slot, module, telemetry, heartbeat, and device identity model.
 - [mqtt-topics.md](mqtt-topics.md): MQTT topic names, payload examples, command topics, telemetry, heartbeat, and canonical message contracts.
 
