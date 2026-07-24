@@ -85,7 +85,8 @@ Load only the matching `SKILL.md`, not all skills.
 
 Available skills:
 
-- `.agents/skills/ba-po/SKILL.md` — **primary entry point for all new feature work.** Discovery (concept → epic) and grooming (epic → ready-for-dev tasks), including plan interrogation.
+- `.agents/skills/ba-po/SKILL.md` — **primary entry point for all new feature work.** Discovery (concept → epic) and grooming (epic → ready-for-dev tasks), including plan interrogation. The **BA hat**: one epic, in depth.
+- `.agents/skills/board-triage/SKILL.md` — **PO counterpart to `ba-po`.** Reviews the whole board and produces a prioritized, dependency-aware work order (what to work next, what to groom now, what is blocked). Advisory by default; applies board changes only on explicit confirmation.
 - `.agents/skills/documentation/SKILL.md` — documentation standards reference: spec structure, style rules, consistency rules.
 - `.agents/skills/grill-with-docs/SKILL.md` — stress-test plans against glossary, ADRs, and docs. **Retired** — superseded by `ba-po/SKILL.md`.
 - `.agents/skills/implementation/SKILL.md` — implementation-stage execution and artifact/status rules.

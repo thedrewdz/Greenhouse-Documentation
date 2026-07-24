@@ -39,7 +39,7 @@ Both phases may run in one session or across sessions. Phase 1 ends at **Ready F
 
 **Find board item ID:**
 ```bash
-gh project item-list 1 --owner thedrewdz --format json --limit 100 \
+gh project item-list 1 --owner thedrewdz --format json --limit 1000 \
   | ConvertFrom-Json | Select-Object -ExpandProperty items \
   | Where-Object { $_.content.number -eq <issue-number> -and $_.repository -like "*<repo>*" } \
   | Select-Object -ExpandProperty id
@@ -55,7 +55,7 @@ gh project item-edit --project-id PVT_kwHOClcYbc4BcGuS \
 
 **Verify board status (run after every status transition):**
 ```bash
-gh project item-list 1 --owner thedrewdz --format json --limit 100 \
+gh project item-list 1 --owner thedrewdz --format json --limit 1000 \
   | ConvertFrom-Json | Select-Object -ExpandProperty items \
   | Where-Object { $_.id -eq "<item-id>" } \
   | Select-Object -ExpandProperty status

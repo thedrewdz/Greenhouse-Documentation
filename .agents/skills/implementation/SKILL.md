@@ -15,7 +15,7 @@ The Greenhouse Delivery board (project `1`, owner `thedrewdz`) is the **primary 
 
 **Find the board item ID for the current task:**
 ```bash
-gh project item-list 1 --owner thedrewdz --format json --limit 100 \
+gh project item-list 1 --owner thedrewdz --format json --limit 1000 \
   | ConvertFrom-Json | Select-Object -ExpandProperty items \
   | Where-Object { $_.content.number -eq <issue-number> -and $_.repository -like "*<repo>*" } \
   | Select-Object -ExpandProperty id
@@ -65,7 +65,7 @@ gh issue edit <issue-number> -R thedrewdz/<repo> --body $body
 
 **Verify board item status (use after every status transition to confirm it applied):**
 ```bash
-gh project item-list 1 --owner thedrewdz --format json --limit 100 \
+gh project item-list 1 --owner thedrewdz --format json --limit 1000 \
   | ConvertFrom-Json | Select-Object -ExpandProperty items \
   | Where-Object { $_.id -eq "<item-id>" } \
   | Select-Object -ExpandProperty status

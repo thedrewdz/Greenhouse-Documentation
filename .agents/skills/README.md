@@ -5,7 +5,9 @@ This folder contains Codex-discoverable reusable skills for both Greenhouse docu
 ## Workflow Skills
 
 - ba-po/
-  - **Primary entry point for all new feature work.** Phase 1 (Discovery): distills a concept into a well-formed epic with long-form documentation. Phase 2 (Grooming): breaks the epic into single-stack, dependency-ordered tasks ready for development. Grills relentlessly through both phases.
+  - **Primary entry point for all new feature work.** Phase 1 (Discovery): distills a concept into a well-formed epic with long-form documentation. Phase 2 (Grooming): breaks the epic into single-stack, dependency-ordered tasks ready for development. Grills relentlessly through both phases. This is the **BA hat** — one epic, in depth.
+- board-triage/
+  - **Product Owner (PO) counterpart to `ba-po`.** Reviews the whole board and produces a prioritized, dependency-aware work order: what to work next for incremental value, which epics to groom before their dependents are needed, and which items are blocked by a lagging dependency. Advisory by default; applies board changes only on explicit confirmation. This is the **PO hat** — the whole board, in breadth.
 
 ## Role Skills
 
@@ -41,6 +43,7 @@ This folder contains Codex-discoverable reusable skills for both Greenhouse docu
 ## Usage Guidance
 
 1. Start with `ba-po` for all new feature work — discovery through grooming.
+2. Use `board-triage` to prioritize and sequence the backlog across all items — deciding what to pull, groom, or unblock next.
 2. Use role and cross-cutting engineering skills as needed for the implementation lifecycle.
 3. For implementation in consumer repositories, pair these docs skills with repository-local implementation skills.
 4. Keep terms aligned with the selected CONTEXT file and ADRs.
