@@ -276,17 +276,19 @@ DeleteAsync()                  → Task
 ```
 IsOnlineAsync()                    → Task<bool>
 GetCurrentNetworkNameAsync()       → Task<string?>
-GetLocalAddressAsync()             → Task<string?>   (e.g. "192.168.1.50"; null if offline)
 ConnectAsync(networkName, password?) → Task<ConnectResult>
+# GetLocalAddressAsync() → Task<string?> — NOT part of the Phase-1 setup port; added by the
+#   Edge Unit onboarding epic (see note below and Deferred Work).
 ```
 
 The concrete adapter (`NmcliNetworkAdapter`) in `Greenhouse.Network` implements this port via
 `nmcli` subprocess calls. The extension method `AddGreenhouseNetwork()` wires it in the
 composition root.
-`GetLocalAddressAsync` returns the Main Unit's primary local IPv4 address, used by the Edge Unit
-onboarding flow to derive `mqtt_broker_uri` (e.g. `mqtt://192.168.1.50:1883`). Implementation
-of `GetLocalAddressAsync` is deferred to the Edge Unit onboarding epic; it may return `null`
-until that epic is complete.
+`GetLocalAddressAsync` is **not part of the Phase-1 setup port**. It returns the Main Unit's
+primary local IPv4 address, used by the Edge Unit onboarding flow to derive `mqtt_broker_uri`
+(e.g. `mqtt://192.168.1.50:1883`), and is added to `INetworkConnector` by the Edge Unit
+onboarding epic — see `specs/edge-unit-configuration/spec.md`. The Phase-1 `INetworkConnector`
+in `Greenhouse.Core` deliberately omits it (documented in the port's XML remarks).
 
 ## API Contracts
 
@@ -405,6 +407,8 @@ All error responses use a consistent shape:
 - Factory-reset deletion of MainConfig (`DELETE /api/setup/main-config`).
 - WiFi credential encryption at rest (Phase 2 hardening).
 - Edge Unit onboarding and reconfiguration (separate specs).
+- `INetworkConnector.GetLocalAddressAsync` — not part of the Phase-1 setup port; added by the
+  Edge Unit onboarding epic (see `specs/edge-unit-configuration/spec.md`).
 - Authentication and authorization.
 
 ## Open Questions
