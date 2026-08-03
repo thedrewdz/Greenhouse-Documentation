@@ -77,9 +77,20 @@ gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
 13. If testing cannot be completed because docs, acceptance criteria, or prerequisites are missing or contradictory, file a new standalone issue in `Greenhouse-Documentation` and comment on the board item with the blocker.
 14. Push resulting changes upstream.
 
+## Test Integrity Rules
+
+A green run is only evidence if it states what it actually exercised.
+
+**A conditional test reports Skipped, never Passed.** A test that returns early because a precondition is unmet — wrong OS, missing tool, absent hardware — reports **Passed** and is indistinguishable from a test that ran. Use the framework's skip mechanism (xUnit `Assert.Skip`, `[SkippableFact]`, or the equivalent), never a bare `return`. Traceable to Greenhouse-Services#70: a Linux-only subprocess teardown test used a bare `return` and reported `Failed: 0, Passed: 26, Skipped: 0` on a Windows host, so the host that could not run it looked identical to the host that could.
+
+**A stand-in is named in the evidence, together with what it does not prove.** Where a test substitutes something for an external dependency — a shell script for `bluetoothctl`, a fake for the broker, loopback for a device — the evidence recorded on the board item names the substitution and states which behavior of the real dependency remains unverified. Passing against a stand-in is never reported as cross-process or on-device validation. Traceable to Greenhouse-Services#41, whose deadlock fix is proven against a host shell and still awaits a real BlueZ session (#54).
+
+**A fix applied at more than one site is covered at every site.** When the same hazard is fixed in several places, each place needs its own regression test. The site named in the issue reliably gets one; a sibling site fixed as a rider on that branch reliably does not. Traceable to Greenhouse-Services#69.
+
 ## Quality Gate
 
 - Critical acceptance criteria have test evidence.
+- Test integrity rules are satisfied: no conditional test reports Passed without running, every stand-in is named with its residual risk, and every site of a multi-site fix has coverage.
 - Negative-path behavior is covered where relevant.
 - Remaining risks are recorded as comments on the board item.
 - Fixable failures or coverage gaps return the board item to **Ready For Dev** with concrete feedback commented on the issue.

@@ -137,6 +137,18 @@ When an implementation task (epic or issue) has sub-issues (subtasks), these rul
 14. Create a pull request targeting `main`. If this is feedback remediation and a PR already exists, update its description with a summary of the changes made in this pass. Record the PR name and URL on the issue description under a `## Pull Request` heading (see Board Operations).
 15. If the task has sub-issues, set each sub-issue to **In Review**. Then set the board item (or parent task) to **In Review** (see Board Operations and Subtask Execution).
 
+## Hazard-Class Sweep
+
+A defect is almost always an instance of a class — an undrained pipe, an unobserved task, an unbounded buffer, a teardown that only runs on one exception type. A fix that addresses only the site the issue names leaves the class in place.
+
+Before finalizing a defect fix:
+
+- **Enumerate every site of the same hazard in the repository**, not only the one the issue names. Search for the shared mechanism — the helper, the API call, the pattern — not the reported symptom.
+- **Fix and cover every site found.** A sibling site fixed as a rider on another issue's branch gets the same regression test as the named site. This is where rigor is silently dropped.
+- **File and link any site deliberately left unfixed** before the pull request merges, with the reason.
+
+Traceable to Greenhouse-Services#41: the issue named `RunSessionAsync`, while the identical undrained-stderr hazard in `ScanAsync` went unnoticed for four days until a human comment widened the scope. When `ScanAsync` was then fixed in the same pass, it shipped without a regression test (#69) and introduced a new unbounded-buffer defect (#66) — neither of which happened at the named site.
+
 ## Infrastructure Abstraction Rules
 
 This codebase follows **Ports and Adapters (Hexagonal Architecture)**. The core distinction is between *mechanism* and *policy*.
@@ -188,6 +200,7 @@ If any check fails, fix placement or abstraction boundaries before continuing.
 - Verification evidence is captured.
 - Architecture execution checklist is fully satisfied.
 - Infrastructure abstraction rules are fully satisfied.
+- For a defect fix: every site of the same hazard class is enumerated, and each is either fixed and covered or filed and linked (see Hazard-Class Sweep).
 - Board item is set to **In Review** on passing, or **Todo** if an early stop occurred.
 - All defects found during implementation are fixed before advancing.
 - Any documentation hole found causes an immediate stop; the hole is filed in `Greenhouse-Documentation` and the board item is returned to **Todo**.
