@@ -41,7 +41,7 @@ gh issue create -R thedrewdz/Greenhouse-Documentation \
 ## Workflow
 
 1. Read the board item, all comments, and all sub-issues to understand the full delivery history.
-2. Confirm a pull request exists for this task's implementation branch and has been approved. If no approved PR exists, comment on the issue with the required step and stop.
+2. Confirm a pull request exists for this task's implementation branch and is **approved** as defined in [Merge Approval](../../../workflows/feature-delivery-harness.md#merge-approval) — required checks green, and an independent review verdict recorded naming the reviewing actor and the reviewed commit SHA. If it is not, comment on the issue with the specific unmet condition and stop. A repository with no required checks cannot satisfy this; file the missing check rather than waiving the gate.
 3. Confirm all defect sub-issues are closed. If any remain open, comment on the issue and stop — do not mark Done.
 4. Review all findings recorded as comments and sub-issues across the full SDLC for this task.
 5. Identify repeated or systemic failure patterns.

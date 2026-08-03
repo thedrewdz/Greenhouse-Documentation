@@ -60,6 +60,12 @@ gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
 # Must return 0 before advancing to Done.
 ```
 
+## Review and Fix Separation
+
+**This pass raises findings. It does not fix them.** Every finding — blocking or not, however small or obvious the fix looks — is filed and routed to a separate implementation pass. See [Review and Fix Separation](../../../workflows/feature-delivery-harness.md#review-and-fix-separation) for why, and do not treat a request for speed as an instruction to fix in place.
+
+When this pass is re-reviewing fixes to its own earlier findings, finding nothing new that blocks is an **exit**. Do not manufacture another round.
+
 ## Workflow
 
 1. Pull latest remote changes with `git pull --ff-only` and stop on conflicts.
@@ -76,13 +82,22 @@ gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
 12. If no blocking findings remain and no open defect sub-issues exist, proceed to merge safety decision.
 13. If review cannot safely continue because docs, prerequisites, or merge state are unresolved, file a new standalone issue in `Greenhouse-Documentation` and comment on the board item with the blocker.
 14. If not safe to merge to `main`, record concrete implementation feedback as a comment on the issue and do not merge.
-15. If safe to merge to `main`, merge the pull request to `main`.
+15. If safe to merge to `main`, confirm the required status checks on the head commit are green, record the review verdict on the pull request in the form defined in [Merge Approval](../../../workflows/feature-delivery-harness.md#merge-approval), then merge.
+
+**Confirm required checks before merging:**
+```bash
+gh pr view <pr-number> -R thedrewdz/<repo> --json statusCheckRollup \
+  --jq '[.statusCheckRollup[] | select(.conclusion != "SUCCESS")] | length'
+# Must return 0, and the rollup must not be empty — a repo with no checks cannot be approved.
+```
 
 ## Quality Gate
 
+- No code was changed by this pass.
 - Findings are specific and actionable.
 - Severity and risk are explicit.
 - All documentation holes are filed as new Todo issues in `Greenhouse-Documentation`.
 - All blocking defects are filed as sub-issues; board item is **Ready For Dev** until they are closed.
 - No open sub-issues remain before marking the parent task **Done**.
 - Pull request decision is explicit: feedback commented on the issue when unsafe, merged to `main` when safe.
+- A merge happened only after required checks were green and a review verdict was recorded on the pull request.

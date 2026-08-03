@@ -21,6 +21,52 @@ Use this workflow for all non-trivial feature work.
 - If an expected output artifact is not required for a stage, create the file anyway with `Not required` and a reason.
 - Until an orchestration agent exists, a human or caller advances each stage by invoking the next role after verifying the current status and artifacts.
 - Stage reports and `doc-feedback.md` are append-only across repeated implementation loops unless a template explicitly says otherwise.
+- A pass that raises a review finding does not fix it — see [Review and Fix Separation](#review-and-fix-separation).
+- A pull request may only be merged once approved as defined in [Merge Approval](#merge-approval).
+
+## Review and Fix Separation
+
+**The harness governs: the pass that raises a finding is never the pass that fixes it.**
+
+This rule exists because the alternative was tried and failed twice in one epic. Greenhouse-Services epic #25 fixed five blocking review findings in the same session that raised them; an independent pass over those fixes then found three further defects in them (#51, #52, #53), including a fix asserted as correct in three places that was disproved by a ten-line probe. A pass cannot reliably review its own reasoning.
+
+Rules:
+
+- Stage 4 raises findings and routes them to `ready-for-implementation`. It does not edit code (see Stage 4 Rules).
+- Fixes are a fresh Stage 2 pass **by a different actor than the one that raised the findings**. In a single-maintainer setup, "different actor" means a separate session that reads the filed findings rather than carrying over the reviewing pass's working context.
+- Fixes re-enter the loop at Stage 3 (Test) and then Stage 4 (Review), as the existing loopbacks already state.
+- **The loop terminates when a Stage 4 pass produces no new blocking findings.** A review that only confirms prior fixes is an exit, not another round. Re-reviewing fixes does not oblige a further round unless it finds something new.
+- Findings are still filed as issues the moment they are found. Only the *fixing* moves to a separate pass.
+
+This supersedes any working preference to file and fix a finding in the same session.
+
+## Merge Approval
+
+A pull request is **approved**, and may be merged, when both hold:
+
+1. **Checks are green.** Every required status check on the head commit has concluded successfully. A repository with no checks cannot satisfy this condition — see the table below.
+2. **An independent review verdict is recorded**, naming the reviewing actor and the exact commit SHA reviewed, where that actor did not author the commits under review.
+
+GitHub does not permit the author of a pull request to approve it. Where the reviewing pass runs under the same GitHub account as the authoring pass, record the verdict as a pull request comment in this form instead of a GitHub approval — the comment is the audit record:
+
+```text
+Review verdict: approved
+Reviewed commit: <sha>
+Reviewing pass: <stage-4 session or actor identifier>
+Blocking findings: none
+```
+
+Required checks per governed repository:
+
+| Repository | Required checks | State |
+|---|---|---|
+| `Greenhouse-Documentation` | none — documentation-only changes are exempt from pull request entirely (see branching-strategy.md) | n/a |
+| `Greenhouse-Services` | `build-and-test` — `dotnet build` + `dotnet test` | present |
+| `Greenhouse-Firmware` | `standards-guard` | present |
+| `Greenhouse-WebUI` | `flutter analyze` + `flutter test` | **absent — tracked as Greenhouse-WebUI#24, must exist before the repo's first pull request** |
+| `Greenhouse-Peripherals` | sketch compilation | **absent — tracked as Greenhouse-Peripherals#2** |
+
+A repository whose required check is absent is **not exempt**; it is blocked from merging until the check exists. Do not work around a missing check by declaring the condition satisfied.
 
 ## Canonical Spec Status Lifecycle
 
@@ -155,13 +201,14 @@ Outputs:
 
 Rules:
 
-- Do not fix code during review unless explicitly instructed.
+- Do not fix code during review. Raise the finding, file it, and route it to `ready-for-implementation` for a separate pass — see [Review and Fix Separation](#review-and-fix-separation). This holds even when the fix is obvious and even when the caller asks for speed.
 - Every repeated or systemic issue must become a documentation or skill feedback item.
 - Treat architecture boundary never events as blocking.
 - Require a guardrail update action for every blocking boundary finding.
 - After review completion, decide if the active pull request is safe to merge to `main`.
 - If not safe, emit concrete implementation feedback and do not merge.
-- If safe, first sync the latest `main` into the branch and resolve conflicts (so `main` is never merged from a stale branch), then merge the pull request to `main`.
+- If safe, record the review verdict as defined in [Merge Approval](#merge-approval), then first sync the latest `main` into the branch and resolve conflicts (so `main` is never merged from a stale branch), then merge the pull request to `main`.
+- When this pass is reviewing fixes to its own earlier findings, it is an exit as soon as it finds nothing new that blocks. Do not manufacture another round.
 - Entry gate execution status: `ready-for-review` or `review-in-progress`.
 - Exit execution status: `ready-for-qa` when no blocking findings; `ready-for-implementation` when findings are fixable in code or tests; `blocked` only for true documentation/process blockers that cannot be resolved by implementation.
 
