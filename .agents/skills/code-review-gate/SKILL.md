@@ -7,6 +7,14 @@ description: Use this skill when performing a strict review gate for non-trivial
 
 Provide a strict review gate for non-trivial code changes before they are accepted.
 
+## Review and Fix Separation
+
+**This skill raises findings. It does not fix them.** Every finding — blocking or not, however small, mechanical, or obvious the fix looks — is filed and routed to a separate implementation pass. A one-line workflow or config correction is still a fix. See [Review and Fix Separation](../../../workflows/feature-delivery-harness.md#review-and-fix-separation) for why.
+
+Fixing a finding and then recording an approval over the result is self-approval, and it destroys the independence the merge gate depends on: the pass becomes the author of the head commit it is approving. Record the verdict only in the form defined in [Merge Approval](../../../workflows/feature-delivery-harness.md#merge-approval), and only when this pass authored none of the commits under review.
+
+This rule is stated here as well as in [code-review-agent](../code-review-agent/SKILL.md) because a review pass may load only this skill.
+
 ## Review Focus Order
 
 1. Correctness and regressions.

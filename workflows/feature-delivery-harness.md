@@ -56,6 +56,14 @@ Reviewing pass: <stage-4 session or actor identifier>
 Blocking findings: none
 ```
 
+The verdict value is exactly one of `approved` or `changes-requested`. Only `approved` clears the gate. A qualified verdict — "approve with follow-up", "approved pending X" — is **not** an approval and does not clear it: file the follow-ups as issues and record `approved`, or, if that cannot be done honestly, record `changes-requested`.
+
+A verdict is scoped to the single commit SHA it names:
+
+- If the head commit changes after a verdict is recorded, that verdict no longer applies to the pull request. A new verdict against the new head is required.
+- The recording pass must have authored **no commit** in the pull request, including commits it pushed earlier in the same session. A pass that fixes a finding and then approves the result has approved its own work, however the session is framed.
+- Blocking findings recorded by a later pass against the same SHA supersede an earlier approval, and the pull request returns to `ready-for-implementation`.
+
 Required checks per governed repository:
 
 | Repository | Required checks | State |
