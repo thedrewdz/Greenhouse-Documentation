@@ -53,6 +53,8 @@ gh issue create -R thedrewdz/Greenhouse-Documentation \
   --body "<description>. Identified during: <current-issue-url>"
 ```
 
+**Defect is well-formed but blocked on an upstream decision:** hold it and declare the blocker in both issue bodies rather than promoting it — a defect that meets the three-point bar can still be un-actionable, and promoting it sends implementation into a guaranteed stop. See [Declaring a blocking decision](../../../workflows/feature-delivery-harness.md#declaring-a-blocking-decision).
+
 **List defect sub-issues with their state (to judge fixed vs unfixed):**
 ```bash
 gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \

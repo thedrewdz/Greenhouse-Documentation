@@ -64,6 +64,8 @@ gh project item-edit --project-id PVT_kwHOClcYbc4BcGuS --id <new-item-id> \
   --field-id PVTSSF_lAHOClcYbc4BcGuSzhWx6Oo --single-select-option-id 1e580093
 ```
 
+**Defect is well-formed but blocked on an upstream decision:** hold it and declare the blocker in both issue bodies rather than promoting it. Meeting the three-point bar means the defect is understood, not that it is actionable. See [Declaring a blocking decision](../../../workflows/feature-delivery-harness.md#declaring-a-blocking-decision).
+
 ## Pull Request Ownership
 
 **This pass does not merge the pull request, and does not set any board item to Done.** Stage 6 (Retrospective) owns both — see [Pull Request Ownership](../../../workflows/feature-delivery-harness.md#pull-request-ownership).

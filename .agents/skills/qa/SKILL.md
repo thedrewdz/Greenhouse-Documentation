@@ -59,6 +59,17 @@ gh project item-edit --project-id PVT_kwHOClcYbc4BcGuS --id <new-item-id> \
   --field-id PVTSSF_lAHOClcYbc4BcGuSzhWx6Oo --single-select-option-id 1e580093
 ```
 
+**Defect is well-formed but blocked on an upstream decision — declare it, do not promote it:**
+```bash
+# File the decision in the docs repo first if it does not exist, then add to the
+# DEFECT body:   Blocked by: thedrewdz/Greenhouse-Documentation#<n>
+# and to the DECISION body: Blocks: thedrewdz/<repo>#<defect>
+# Both directions, structured lines in the body, never a comment, and never a topic
+# name — it must resolve to an issue that can close.
+# See Declaring a blocking decision in the harness for the rules and the query.
+```
+A defect that meets the three-point bar can still be un-actionable. Promoting it sends implementation into a guaranteed stop. Hold it and declare the blocker — see [Declaring a blocking decision](../../../workflows/feature-delivery-harness.md#declaring-a-blocking-decision).
+
 **Documentation hole found — create standalone Todo issue in the docs repo:**
 ```bash
 gh issue create -R thedrewdz/Greenhouse-Documentation \

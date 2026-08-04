@@ -105,11 +105,79 @@ Routing:
 
 - **Defect found under a parent task** — file it as a sub-issue, attach it to the parent, and return the **parent** to **Ready For Dev**. Unchanged.
 - **Defect found with no parent task** — file it as a standalone issue. The stage that files it sets it to **Ready For Dev** directly if it meets the three-point bar above.
-- **Defect that does not meet the bar** — leave it at **Todo** and state on the issue exactly which of the three is missing. That is the only case where a defect waits for someone else.
+- **Defect that does not meet the bar** — leave it at **Todo** and state on the issue exactly which of the three is missing.
+- **Defect that meets the bar but is blocked on an upstream decision** — hold it and declare the blocker, as below. Meeting the bar means the defect is *understood*; it does not mean it is *actionable*.
+
+The three-point bar tests whether the report is complete. It cannot detect the second reason a defect waits, so both must be checked.
 
 This closes a gap where a standalone defect was boarded at **Todo** by the add-to-project workflow with no owner able to promote it: Stage 2 refuses any item that is not **Ready For Dev**, `ba-po` Phase 2 was the only exit to that status, and `board-triage` is forbidden from bypassing a lifecycle gate another skill owns. Traceable to Greenhouse-Services#72, which sat at **Todo** with full reproduction, root cause, and four acceptance criteria, and was only implemented on an explicit instruction that crossed the gate.
 
 Promotion asserts the report is complete, not that the fix is approved. Stage 2 still owns whether the work is done.
+
+### Declaring a blocking decision
+
+A defect can be perfectly reported and still un-actionable, because the fix needs a contract, spec, or ADR decision that an implementation pass is forbidden to make. Promoting it anyway sends that pass into a guaranteed stop: `implementation` must halt on a documentation hole, file a docs issue, and return the item to **Todo** — the same place, one round trip later.
+
+**Declare the dependency as structured text in both issue bodies.** Not in a comment, and not as prose.
+
+On the **defect**, one line per blocker:
+
+```text
+Blocked by: thedrewdz/Greenhouse-Documentation#52
+```
+
+On the **decision**, one line per defect it unblocks:
+
+```text
+Blocks: thedrewdz/Greenhouse-Services#73
+```
+
+Both directions are recorded so the relationship is discoverable from either end without a cross-repository join. Use the fully qualified `owner/repo#number` form — these edges routinely cross repositories, and a bare `#52` resolves to the wrong repository when read from anywhere else.
+
+Rules:
+
+- **Bodies, not comments.** A body is edited when the state changes, so it always shows the current answer. A comment thread is append-only, and the reader has to reconstruct the current state from its whole history.
+- **Do not use GitHub sub-issue links for this.** They already carry a different relationship — a defect belonging to a parent delivery task — which [Defect Sub-Issue Gates](#defect-sub-issue-gates) reads to choose between **Ready For Dev** and **In Review**. Overloading them would corrupt a gate that works.
+- **Name the decision, not the topic.** `Blocked by:` must resolve to an issue that can close. A topic cannot be queried and cannot close: `Blocked by: Edge Unit management list spec.` — the real form in Greenhouse-Documentation#21 and #23 — names something no tool can follow, and is the failure this convention exists to stop. The same line as `Blocked by: thedrewdz/Greenhouse-Documentation#12` is resolvable.
+- **File the decision if it does not exist yet.** A blocker with no issue is not a declaration.
+- A pass that closes a decision issue should run the query below and promote what it unblocks. Whether that is an enforced gate, and who owns it, is being decided in Greenhouse-Documentation#57.
+
+#### Finding blocked items
+
+**Do not use `gh search issues` for this.** GitHub's issue search tokenizes the query and does not honour the phrase, so it returns items that do not contain the line at all — verified 2026-08-04: both `gh search issues "Blocked by:"` and `gh search issues 'in:body "Blocked by"'` returned issues with no such line, including ones whose only connection was the word "by". A gate built on it would read as satisfied while missing real dependencies.
+
+Filter locally on an exact line match instead:
+
+```powershell
+# Every open item declaring a blocker, across the governed repositories
+$repos = 'Greenhouse-Documentation','Greenhouse-Services','Greenhouse-WebUI',
+         'Greenhouse-Firmware','Greenhouse-Peripherals'
+foreach ($repo in $repos) {
+  $issues = gh issue list -R "thedrewdz/$repo" --state open --limit 300 `
+    --json number,title,body | ConvertFrom-Json
+  $issues | Where-Object { $_.body -match '(?m)^\s*Blocked by:\s*\S+' } |
+    ForEach-Object { "$repo#$($_.number)  $($_.title)" }
+}
+```
+
+```powershell
+# Which items does closing <n> unblock? Run before closing a decision issue.
+$blocker = 'thedrewdz/Greenhouse-Documentation#<n>'
+foreach ($repo in $repos) {
+  $issues = gh issue list -R "thedrewdz/$repo" --state open --limit 300 `
+    --json number,title,body | ConvertFrom-Json
+  $issues | Where-Object { $_.body -match [regex]::Escape("Blocked by: $blocker") } |
+    ForEach-Object { "$repo#$($_.number)  $($_.title)" }
+}
+```
+
+The exact-line match is what makes this trustworthy, and it is why the convention requires a structured line rather than a sentence. Raise `--limit` if a repository ever exceeds 300 open issues; `gh` truncates silently rather than warning.
+
+This exists because the relationship was previously prose. Four defects blocked on four decisions were promoted on 2026-08-04 only because one session closed the decisions and promoted the dependents in the same pass; the link lived nowhere but that session's comments. A promotion that works only when one actor holds both halves in context is not a process (Greenhouse-Documentation#55).
+
+The convention is not defect-specific. Any item may declare a blocker — a spec task waiting on another spec has the same problem, and #21 and #23 are the proof.
+
+Where a blocked defect **sits** on the board while it waits is a separate open question — Greenhouse-Documentation#56, since **Todo** currently also means "not looked at" and "report incomplete".
 
 ## Merge Approval
 

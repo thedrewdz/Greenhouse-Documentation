@@ -46,6 +46,7 @@ Issues filed in any code repository (`services`, `ui`, `edge`, `peripherals`).
 - Executed on a short-lived feature branch; merged to `main` only via a pull request whose required status checks are green.
 - **Only the `retrospective` skill (Stage 6) merges the pull request and sets an item to Done.** The `test`, `code-review-agent`, and `qa` skills hand work over at **In Review** and never close it — see [Pull Request Ownership](workflows/feature-delivery-harness.md#pull-request-ownership).
 - A defect report carrying reproduction, root cause, and testable acceptance criteria is already groomed and is filed straight at **Ready For Dev** — it does not need `ba-po` grooming. See [Defect Intake and Promotion](workflows/feature-delivery-harness.md#defect-intake-and-promotion).
+- An item blocked on another issue declares it as a structured `Blocked by: thedrewdz/<repo>#<n>` line in its body, and the blocker declares `Blocks:` in return. Never a topic name, never only a comment — see [Declaring a blocking decision](workflows/feature-delivery-harness.md#declaring-a-blocking-decision). GitHub issue search cannot find these reliably; the section publishes the exact-match query that can.
 - Use the `implementation` skill for all implementation tasks.
 
 ### Feature origination rule
