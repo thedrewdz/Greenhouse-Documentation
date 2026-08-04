@@ -53,12 +53,24 @@ gh issue create -R thedrewdz/Greenhouse-Documentation \
   --body "<description>. Identified during: <current-issue-url>"
 ```
 
-**Verify all sub-issues are closed before marking Done:**
+**Standalone defect with no parent task — file and promote:**
 ```bash
-gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
-  --jq '[.[] | select(.state=="open")] | length'
-# Must return 0 before advancing to Done.
+gh issue create -R thedrewdz/<repo> --title "<title>" --label "bug" \
+  --body "<reproduction, root cause, testable acceptance criteria>"
+# Promote to Ready For Dev only if the report carries reproduction, root cause, and
+# acceptance criteria — see Defect Intake and Promotion in the harness. Otherwise leave
+# at Todo and state which of the three is missing.
+gh project item-edit --project-id PVT_kwHOClcYbc4BcGuS --id <new-item-id> \
+  --field-id PVTSSF_lAHOClcYbc4BcGuSzhWx6Oo --single-select-option-id 1e580093
 ```
+
+## Pull Request Ownership
+
+**This pass does not merge the pull request, and does not set any board item to Done.** Stage 6 (Retrospective) owns both — see [Pull Request Ownership](../../../workflows/feature-delivery-harness.md#pull-request-ownership).
+
+This pass has exactly two terminal transitions: **Ready For Dev** when blocking findings exist, **In Review** when none do.
+
+Pulling the latest task branch is a different operation and is still required — see step 1.
 
 ## Review and Fix Separation
 
@@ -77,19 +89,14 @@ When this pass is re-reviewing fixes to its own earlier findings, finding nothin
 7. Validate test adequacy at a review level.
 8. Classify findings as blocking or non-blocking.
 9. For each documentation hole found, file a new standalone issue in `Greenhouse-Documentation` at default **Todo** status referencing the current task URL (see Board Operations).
-10. For each blocking defect found, file a sub-issue in the current repository, attach it to the parent task, and return the parent board item to **Ready For Dev** (see Board Operations).
-11. If blocking findings exist, comment on the issue with concrete implementation feedback.
-12. If no blocking findings remain and no open defect sub-issues exist, proceed to merge safety decision.
-13. If review cannot safely continue because docs, prerequisites, or merge state are unresolved, file a new standalone issue in `Greenhouse-Documentation` and comment on the board item with the blocker.
-14. If not safe to merge to `main`, record concrete implementation feedback as a comment on the issue and do not merge.
-15. If safe to merge to `main`, confirm the required status checks on the head commit are green, record the review verdict on the pull request in the form defined in [Merge Approval](../../../workflows/feature-delivery-harness.md#merge-approval), then merge.
+10. For each blocking defect found under a parent task, file a sub-issue in the current repository, attach it to the parent, and return the parent board item to **Ready For Dev** (see Board Operations). For a blocking defect with no parent task, file it standalone and promote it per [Defect Intake and Promotion](../../../workflows/feature-delivery-harness.md#defect-intake-and-promotion).
+11. If blocking findings exist, comment on the issue with concrete implementation feedback and set the board item to **Ready For Dev**. Stop there.
+12. If review cannot safely continue because docs, prerequisites, or merge state are unresolved, file a new standalone issue in `Greenhouse-Documentation` and comment on the board item with the blocker.
+13. If no blocking findings remain and every defect sub-issue is closed or fixed-and-awaiting-merge, record that outcome on the issue as prose — what was examined, what was found, residual risks — and set the board item to **In Review**. Hand off to Stage 5. Do not merge.
 
-**Confirm required checks before merging:**
-```bash
-gh pr view <pr-number> -R thedrewdz/<repo> --json statusCheckRollup \
-  --jq '[.statusCheckRollup[] | select(.conclusion != "SUCCESS")] | length'
-# Must return 0, and the rollup must not be empty — a repo with no checks cannot be approved.
-```
+Use the fixed-versus-unfixed test in [Defect Sub-Issue Gates](../../../workflows/feature-delivery-harness.md#defect-sub-issue-gates), not issue openness, when deciding between **Ready For Dev** and **In Review**.
+
+No verdict block, approval vocabulary, or SHA-scoped approval record is required. The merge gate is required checks green, evaluated by Stage 6 — see [Merge Approval](../../../workflows/feature-delivery-harness.md#merge-approval).
 
 ## Quality Gate
 
@@ -97,7 +104,7 @@ gh pr view <pr-number> -R thedrewdz/<repo> --json statusCheckRollup \
 - Findings are specific and actionable.
 - Severity and risk are explicit.
 - All documentation holes are filed as new Todo issues in `Greenhouse-Documentation`.
-- All blocking defects are filed as sub-issues; board item is **Ready For Dev** until they are closed.
-- No open sub-issues remain before marking the parent task **Done**.
-- Pull request decision is explicit: feedback commented on the issue when unsafe, merged to `main` when safe.
-- A merge happened only after required checks were green and a review verdict was recorded on the pull request.
+- All blocking defects are filed — as sub-issues under a parent, or standalone and promoted when they meet the intake bar.
+- The **Ready For Dev** decision was made on whether a defect is *unfixed*, not on whether its issue is open.
+- The board item is set to **Ready For Dev** on blocking findings, or **In Review** when none remain. It was not set to **Done**.
+- No merge was performed by this pass.

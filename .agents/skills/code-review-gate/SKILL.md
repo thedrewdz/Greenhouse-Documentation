@@ -11,7 +11,9 @@ Provide a strict review gate for non-trivial code changes before they are accept
 
 **This skill raises findings. It does not fix them.** Every finding — blocking or not, however small, mechanical, or obvious the fix looks — is filed and routed to a separate implementation pass. A one-line workflow or config correction is still a fix. See [Review and Fix Separation](../../../workflows/feature-delivery-harness.md#review-and-fix-separation) for why.
 
-Fixing a finding and then recording an approval over the result is self-approval, and it destroys the independence the merge gate depends on: the pass becomes the author of the head commit it is approving. Record the verdict only in the form defined in [Merge Approval](../../../workflows/feature-delivery-harness.md#merge-approval), and only when this pass authored none of the commits under review.
+The reason is not merge-gate independence — the merge gate is required checks green and nothing else (see [Merge Approval](../../../workflows/feature-delivery-harness.md#merge-approval)). It is that a pass cannot reliably review its own reasoning: five findings fixed in the session that raised them produced three further defects in the fixes, one of them asserted as correct in three places and disproved by a ten-line probe.
+
+**This pass also does not merge the pull request and does not set any board item to Done.** Stage 6 owns both — see [Pull Request Ownership](../../../workflows/feature-delivery-harness.md#pull-request-ownership). It has two terminal transitions: **Ready For Dev** on blocking findings, **In Review** when none remain. Pulling the latest task branch is a different operation and is still required.
 
 This rule is stated here as well as in [code-review-agent](../code-review-agent/SKILL.md) because a review pass may load only this skill.
 

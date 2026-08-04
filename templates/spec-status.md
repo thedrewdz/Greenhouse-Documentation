@@ -26,6 +26,7 @@ This file tracks execution lifecycle status in implementation repositories only.
 - `review-in-progress`
 - `ready-for-qa`
 - `qa-in-progress`
+- `qa-deferred`
 - `complete`
 - `blocked`
 
@@ -45,7 +46,9 @@ This file tracks execution lifecycle status in implementation repositories only.
 - QA Agent must stop when status is not `ready-for-qa` or `qa-in-progress`.
 - QA Agent sets status to `complete` only when recommendation is `Go` and critical acceptance criteria are satisfied.
 - QA Agent sets status to `ready-for-implementation` when `Conditional-Go` or `No-Go` findings are fixable by implementation work.
+- QA Agent sets status to `qa-deferred` when the recommendation is `Conditional-Go` and its condition is not fixable in software — no hardware, no device, no physical access. The board item holds at **In Review** and a tracking issue records the validation owed. See [Deferred validation](../workflows/feature-delivery-harness.md#deferred-validation).
 - Any stage sets status to `blocked` only for unresolved docs, missing decisions, unsafe process state, unavailable prerequisites, or other blockers that cannot be resolved by implementation alone.
+- Test, Code Review, and QA Agents never merge the pull request and never set a board item to **Done**. Stage 6 (Retrospective) owns both — see [Pull Request Ownership](../workflows/feature-delivery-harness.md#pull-request-ownership).
 
 ## Loopback Rules
 
@@ -56,6 +59,7 @@ This file tracks execution lifecycle status in implementation repositories only.
 - `review-in-progress` -> `ready-for-implementation` on fixable review findings
 - `ready-for-qa` -> `qa-in-progress` -> `complete` on `Go`
 - `qa-in-progress` -> `ready-for-implementation` on fixable `Conditional-Go` or `No-Go`
+- `qa-in-progress` -> `qa-deferred` on a `Conditional-Go` whose condition is not fixable in software; Stage 6 accepts `qa-deferred` as well as `complete`
 - Any status -> `blocked` only for true documentation, prerequisite, merge-safety, or process blockers
 
 ## Artifact Rules

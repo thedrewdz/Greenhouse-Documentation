@@ -53,12 +53,25 @@ gh issue create -R thedrewdz/Greenhouse-Documentation \
   --body "<description>. Identified during: <current-issue-url>"
 ```
 
-**Verify all sub-issues are closed before marking Done:**
+**List defect sub-issues with their state (to judge fixed vs unfixed):**
 ```bash
 gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
-  --jq '[.[] | select(.state=="open")] | length'
-# Must return 0 before advancing to Done.
+  --jq '.[] | {number, state, title}'
+# Openness alone does not decide the status — see Pull Request Ownership below.
 ```
+
+## Pull Request Ownership
+
+**This pass does not merge the pull request, and does not set any board item to Done.** Stage 6 (Retrospective) owns both — see [Pull Request Ownership](../../../workflows/feature-delivery-harness.md#pull-request-ownership).
+
+This pass has exactly two terminal transitions:
+
+- **In Review** when critical acceptance criteria have test evidence and every defect sub-issue is closed **or** fixed on the branch with its acceptance criteria met.
+- **Ready For Dev** when a defect sub-issue is open **and unfixed**, or when coverage gaps need implementation work.
+
+**Decide on fixed-versus-unfixed, never on issue openness.** A defect sub-issue closes when the pull request merges, not when the fix lands, so on a second pass over a task every sub-issue is simultaneously open and fixed. Gating **Ready For Dev** on openness is a loop with no exit — see [Defect Sub-Issue Gates](../../../workflows/feature-delivery-harness.md#defect-sub-issue-gates). If this pass cannot tell whether an open sub-issue is fixed, it says so on the issue and holds at the current status rather than guessing.
+
+Pulling the latest task branch is a different operation and is still required — see step 1.
 
 ## Workflow
 
@@ -70,10 +83,10 @@ gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
 6. Validate happy, negative, and degraded paths.
 7. Add or update tests to cover gaps.
 8. Record remaining untested risks as comments on the board item.
-9. For each direct defect found (a test failure caused by a code bug), file a sub-issue in the current repository, attach it to the parent task, and return the parent board item to **Ready For Dev** (see Board Operations). Do not advance while defect sub-issues are open.
+9. For each direct defect found (a test failure caused by a code bug), file a sub-issue in the current repository, attach it to the parent task, and return the parent board item to **Ready For Dev** (see Board Operations). Do not advance while a defect sub-issue is unfixed. For a defect with no parent task, file it standalone and promote it per [Defect Intake and Promotion](../../../workflows/feature-delivery-harness.md#defect-intake-and-promotion).
 10. For each documentation hole found, file a new standalone issue in `Greenhouse-Documentation` at default **Todo** status referencing the current task URL (see Board Operations).
 11. If failures or coverage gaps require implementation work, comment on the issue with concrete feedback and set the board item to **Ready For Dev**.
-12. If critical acceptance criteria have test evidence and no open defect sub-issues remain, set the board item to **In Review** (see Board Operations).
+12. If critical acceptance criteria have test evidence and every defect sub-issue is closed or fixed-and-awaiting-merge, set the board item to **In Review** (see Board Operations and Pull Request Ownership).
 13. If testing cannot be completed because docs, acceptance criteria, or prerequisites are missing or contradictory, file a new standalone issue in `Greenhouse-Documentation` and comment on the board item with the blocker.
 14. Push resulting changes upstream.
 
@@ -95,8 +108,8 @@ A green run is only evidence if it states what it actually exercised.
 - Remaining risks are recorded as comments on the board item.
 - Fixable failures or coverage gaps return the board item to **Ready For Dev** with concrete feedback commented on the issue.
 - Documentation or prerequisite blockers are filed as new issues in `Greenhouse-Documentation`.
-- Board item is set to **In Review** on passing, or **Ready For Dev** if open defect sub-issues exist.
-- All defects are filed as sub-issues before advancing status.
+- Board item is set to **In Review** on passing, or **Ready For Dev** if a defect sub-issue is open **and unfixed**. Openness alone is not the test.
+- All defects are filed — as sub-issues under a parent, or standalone and promoted when they meet the intake bar.
 - All documentation holes are filed as new Todo issues in `Greenhouse-Documentation`.
-- No open sub-issues remain before marking the parent task **Done**.
+- This pass performed no merge and set no item to **Done**.
 - Changes are pushed upstream.

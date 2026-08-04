@@ -8,10 +8,11 @@ It applies to **every repository in the solution** — this documentation hub an
 - `main` is the integration branch and the source of truth. It must always be in a working state.
 - **No feature work is committed directly to `main`.**
 - All feature work happens on a short-lived branch created from the latest `main`.
-- A branch is merged back into `main` only after the work is **complete and working** — implemented, tested, and past the code review gate — via a pull request.
+- A branch is merged back into `main` only after the work is **complete and working** — implemented, tested, past the code review gate, and with every required status check green — via a pull request.
+- **Stage 2 raises the pull request; only Stage 6 (Retrospective) merges it.** See [Pull Request Ownership](workflows/feature-delivery-harness.md#pull-request-ownership).
 - Delete the branch after it merges.
 
-This mirrors the [feature delivery harness](workflows/feature-delivery-harness.md): work is implemented and tested on a branch, the Code Review Gate (Stage 4) decides merge safety, and only safe work reaches `main`.
+This mirrors the [feature delivery harness](workflows/feature-delivery-harness.md): work is implemented and tested on a branch, the Code Review Gate (Stage 4) decides whether the work may proceed, QA validates it, and Stage 6 performs the merge once required checks are green. Only work that has cleared every stage reaches `main`.
 
 ## Documentation-Only Changes
 
@@ -60,7 +61,8 @@ Must be one of the canonical work types (the same values used in the `Branch And
 - One unit of work per branch — keep branches short-lived to limit merge drift.
 - Pull/rebase the latest `main` into the branch before opening or updating the pull request — and again immediately before merging the pull request into `main` — resolving conflicts each time. `main` is never merged from a stale branch.
 - The branch `<type>` and `<descriptor>` must match the `Work type` and spec name recorded in the implementation plan.
-- Merge to `main` only through a pull request that has passed the Code Review Gate.
+- Merge to `main` only through a pull request that has passed the Code Review Gate and whose required status checks are green — see [Merge Approval](workflows/feature-delivery-harness.md#merge-approval).
+- Only Stage 6 (Retrospective) performs the merge. Pulling or rebasing the branch, as in the rule above, is a different operation that every stage still does.
 - In this documentation repository, non-documentation changes follow the same model: write to `main` only by merging a reviewed branch, not by committing directly. Documentation-only changes follow the Documentation-Only Changes exemption above and may be committed directly to `main`.
 
 ## Cross-References

@@ -23,6 +23,7 @@ Use this workflow for all non-trivial feature work.
 - Stage reports and `doc-feedback.md` are append-only across repeated implementation loops unless a template explicitly says otherwise.
 - A pass that raises a review finding does not fix it — see [Review and Fix Separation](#review-and-fix-separation).
 - A pull request may only be merged once approved as defined in [Merge Approval](#merge-approval).
+- Stage 2 raises the pull request; **only Stage 6 merges it to `main`**, and only Stage 6 sets a board item to **Done** — see [Pull Request Ownership](#pull-request-ownership).
 
 ## Review and Fix Separation
 
@@ -40,29 +41,103 @@ Rules:
 
 This supersedes any working preference to file and fix a finding in the same session.
 
-## Merge Approval
+## Pull Request Ownership
 
-A pull request is **approved**, and may be merged, when both hold:
+Each pull request transition has **exactly one owning stage**. A transition performed by any other stage is a process defect, even when the outcome looks correct.
 
-1. **Checks are green.** Every required status check on the head commit has concluded successfully. A repository with no checks cannot satisfy this condition — see the table below.
-2. **An independent review verdict is recorded**, naming the reviewing actor and the exact commit SHA reviewed, where that actor did not author the commits under review.
+| Transition | Owning stage | Every other stage |
+|---|---|---|
+| Raise the pull request | Stage 2 (Implementation) | Does not create one; may update the description of an existing one |
+| Merge the pull request to `main` | Stage 6 (Retrospective) | Never merges |
+| Set the board item to **Done** | Stage 6 (Retrospective) | Never sets **Done** |
 
-GitHub does not permit the author of a pull request to approve it. Where the reviewing pass runs under the same GitHub account as the authoring pass, record the verdict as a pull request comment in this form instead of a GitHub approval — the comment is the audit record:
+Stages 3 (Test), 4 (Review), and 5 (QA) have exactly two terminal board transitions between them:
 
-```text
-Review verdict: approved
-Reviewed commit: <sha>
-Reviewing pass: <stage-4 session or actor identifier>
-Blocking findings: none
+- **In Review** when the stage passes and the work moves on. A Stage 5 `qa-deferred` outcome also rests here — it holds at **In Review** rather than advancing (see [Deferred validation](#deferred-validation)).
+- **Ready For Dev** when findings are fixable in code or tests.
+
+None of the three merges, and none of them closes. This exists because both transitions previously had two claimed owners: Stage 4 merged to `main` while Stage 6 also merged, and Stage 5 set **Done** on a `Go` verdict before any merge had happened. The consequences were a task reaching **Done** with its branch unmerged, and a merge at Stage 4 that skipped Stage 6 entirely — losing artifact promotion and every guardrail update the retrospective would have produced.
+
+### Raising or merging a pull request is not `git pull`
+
+These are different operations and the rule above constrains only the first:
+
+- **Raising** a pull request (`gh pr create`) and **merging** one (`gh pr merge`) are the owned transitions in the table.
+- **Pulling the task branch** (`git fetch` / `git pull --ff-only` on the feature branch) is not a pull request operation at all. **Every stage must still do it** before starting work, as each stage's Rules require. Nothing in this section restricts it.
+
+A stage that reads "does not merge the pull request" as "does not pull the branch" will work from stale code. A stage that reads "pull the latest branch" as licence to merge will bypass Stage 6.
+
+## Defect Sub-Issue Gates
+
+Defect sub-issues gate two different transitions, and **"open" is the wrong test for the earlier one**. A defect sub-issue closes when the pull request merges, not when the fix lands on the branch — so between the fix and the merge, every defect sub-issue is simultaneously open and fixed.
+
+Use these tests:
+
+| Transition | Test | Owner |
+|---|---|---|
+| **Ready For Dev** (send the work back) | A defect sub-issue is open **and unfixed** — no fix commit on the branch, or its acceptance criteria are not met | Stages 3, 4, 5 |
+| **In Review** (the work moves on) | Every defect sub-issue is either closed, or fixed on the branch with its acceptance criteria met and awaiting merge | Stages 3, 4, 5 |
+| **Done** | Every sub-issue is actually closed, which the merge does | Stage 6 only |
+
+Gating **Ready For Dev** on openness alone is a loop with no exit: the sub-issue cannot close before the pull request merges, the merge cannot happen while the parent sits at **Ready For Dev**, so the parent can never reach **In Review** however many times the work is done correctly. Traceable to Greenhouse-Services#72, whose defect sub-issue #82 was fixed, un-skipped and passing while still open, and whose second test pass had to make an undocumented judgement call to advance it at all.
+
+The **Done** gate keeps its existing query, which is correct because Done genuinely does come after merge:
+
+```bash
+gh api repos/thedrewdz/<repo>/issues/<issue-number>/sub_issues \
+  --jq '[.[] | select(.state=="open")] | length'
+# Must return 0 before Stage 6 advances the item to Done.
 ```
 
-The verdict value is exactly one of `approved` or `changes-requested`. Only `approved` clears the gate. A qualified verdict — "approve with follow-up", "approved pending X" — is **not** an approval and does not clear it: file the follow-ups as issues and record `approved`, or, if that cannot be done honestly, record `changes-requested`.
+A stage that cannot determine whether an open sub-issue is fixed states that on the issue and holds at its current status. It does not guess in either direction.
 
-A verdict is scoped to the single commit SHA it names:
+## Defect Intake and Promotion
 
-- If the head commit changes after a verdict is recorded, that verdict no longer applies to the pull request. A new verdict against the new head is required.
-- The recording pass must have authored **no commit** in the pull request, including commits it pushed earlier in the same session. A pass that fixes a finding and then approves the result has approved its own work, however the session is framed.
-- Blocking findings recorded by a later pass against the same SHA supersede an earlier approval, and the pull request returns to `ready-for-implementation`.
+**A well-formed defect report is already groomed.** It does not need `ba-po` discovery or grooming to become actionable, and requiring that would send a bug with a verified root cause, a reproduction, and written acceptance criteria back through a phase that could not change any of them.
+
+A defect is **groomed** when its report carries all three:
+
+1. Reproduction steps, or the observed failure with enough context to reproduce it.
+2. The root cause, or the specific symptom and the code path it occurs on.
+3. Testable acceptance criteria — what must be true for the fix to be accepted.
+
+Routing:
+
+- **Defect found under a parent task** — file it as a sub-issue, attach it to the parent, and return the **parent** to **Ready For Dev**. Unchanged.
+- **Defect found with no parent task** — file it as a standalone issue. The stage that files it sets it to **Ready For Dev** directly if it meets the three-point bar above.
+- **Defect that does not meet the bar** — leave it at **Todo** and state on the issue exactly which of the three is missing. That is the only case where a defect waits for someone else.
+
+This closes a gap where a standalone defect was boarded at **Todo** by the add-to-project workflow with no owner able to promote it: Stage 2 refuses any item that is not **Ready For Dev**, `ba-po` Phase 2 was the only exit to that status, and `board-triage` is forbidden from bypassing a lifecycle gate another skill owns. Traceable to Greenhouse-Services#72, which sat at **Todo** with full reproduction, root cause, and four acceptance criteria, and was only implemented on an explicit instruction that crossed the gate.
+
+Promotion asserts the report is complete, not that the fix is approved. Stage 2 still owns whether the work is done.
+
+## Merge Approval
+
+A pull request is **approved**, and may be merged, when one condition holds:
+
+**Required checks are green.** Every required status check on the head commit has concluded successfully. A repository with no checks cannot satisfy this condition — see the table below.
+
+That is the whole gate. There is no independent-reviewer condition.
+
+### Why there is no reviewer condition
+
+The gate previously also required "an independent review verdict, naming the reviewing actor and the exact commit SHA reviewed, where that actor did not author the commits under review". It is removed because on a single-maintainer project it could not be satisfied honestly and blocked delivery either way:
+
+- Every pass runs under the same maintainer. The only way to clear the condition was to switch accounts, which cleared it *mechanically* — Greenhouse-Services PR #64 was cleared by an `APPROVED` review with an empty body, carrying no findings, no scope, and no statement of what was examined. The record could not be audited even in principle.
+- Where account switching was not used, the condition was unsatisfiable, so Stage 6 could never run and no task could reach **Done**.
+
+The honest position is that this project's merges are **maintainer-authorised and check-gated**, not independently reviewed. The harness says so plainly rather than performing independence it cannot supply.
+
+Review has not been weakened, because review was never the merge gate's job:
+
+- Stage 4 still runs, and its blocking findings still return the work to `ready-for-implementation`. A pull request with unresolved blocking findings is not mergeable, because the task is not at a status Stage 6 will act on.
+- [Review and Fix Separation](#review-and-fix-separation) still holds: the pass that raises a finding is not the pass that fixes it. That rule governs *who fixes*, and is unaffected by removing the merge-time verdict.
+
+A review pass records its findings on the issue and the pull request as normal prose. No mandated verdict block, vocabulary, or SHA-scoped approval record is required.
+
+### Who merges
+
+Only **Stage 6 (Retrospective)** merges a pull request to `main`. See [Pull Request Ownership](#pull-request-ownership).
 
 Required checks per governed repository:
 
@@ -95,6 +170,7 @@ Primary flow:
 Loopbacks:
 
 - Fixable implementation, test, review, or QA failures: return execution status to `ready-for-implementation`
+- QA validation that no implementation pass can clear (no hardware, no device, no physical access): `qa-deferred` — see [Deferred validation](#deferred-validation). This is not a loopback; it moves forward to Stage 6 carrying an explicit debt.
 - True unresolved prerequisites, contradictory docs, missing decisions, unsafe merge state, or process blockers: `*` -> `blocked`
 - Retrospective unblock for doc follow-up: `blocked` -> `new`
 
@@ -182,6 +258,7 @@ Rules:
 - Treat missing or failing tests caused by fixable code behavior as implementation feedback, not a workflow blocker.
 - Treat contradictory acceptance criteria, missing expected behavior, or impossible verification setup as `blocked` with a documentation feedback item.
 - Use branch from `.agent-output/specs/<spec-name>/implementation-plan.md` as source context.
+- Pull the latest task branch before testing. **Do not merge the pull request** and do not set the board item to **Done** — Stage 6 owns both (see [Pull Request Ownership](#pull-request-ownership)).
 - Commit and push outputs when complete so downstream stages can consume artifacts.
 - Entry gate execution status: `ready-for-test` or `test-in-progress`.
 - Exit execution status on pass: `ready-for-review`; on fixable test failure or coverage gap: `ready-for-implementation`; on true documentation/process blocker: `blocked`.
@@ -213,9 +290,9 @@ Rules:
 - Every repeated or systemic issue must become a documentation or skill feedback item.
 - Treat architecture boundary never events as blocking.
 - Require a guardrail update action for every blocking boundary finding.
-- After review completion, decide if the active pull request is safe to merge to `main`.
-- If not safe, emit concrete implementation feedback and do not merge.
-- If safe, record the review verdict as defined in [Merge Approval](#merge-approval), then first sync the latest `main` into the branch and resolve conflicts (so `main` is never merged from a stale branch), then merge the pull request to `main`.
+- **This stage does not merge the pull request** and does not set the board item to **Done** — Stage 6 owns both (see [Pull Request Ownership](#pull-request-ownership)). It still pulls the latest task branch before reviewing.
+- On blocking findings: file them, comment concrete implementation feedback on the issue, and set the board item to **Ready For Dev**.
+- On no blocking findings: record that outcome on the issue as prose and set the board item to **In Review**. No mandated verdict block or approval record is required — see [Merge Approval](#merge-approval).
 - When this pass is reviewing fixes to its own earlier findings, it is an exit as soon as it finds nothing new that blocks. Do not manufacture another round.
 - Entry gate execution status: `ready-for-review` or `review-in-progress`.
 - Exit execution status: `ready-for-qa` when no blocking findings; `ready-for-implementation` when findings are fixable in code or tests; `blocked` only for true documentation/process blockers that cannot be resolved by implementation.
@@ -244,8 +321,24 @@ Rules:
 - Record doc mismatches as documentation feedback items.
 - Treat reproducible defects or acceptance mismatches that can be fixed in code as implementation feedback.
 - Treat ambiguous acceptance criteria, missing environment prerequisites, or contradictory docs as `blocked` with a documentation feedback item.
+- Pull the latest task branch before validating. **Do not merge the pull request** and **do not set the board item to Done** — Stage 6 owns both (see [Pull Request Ownership](#pull-request-ownership)). A passing `Go` sets the board item to **In Review**.
+- A `Go` may not be recorded when the feature spans a process boundary and live cross-process integration was not exercised. That case is a `Conditional-Go` with the deferral named — see Deferred validation below.
 - Entry gate execution status: `ready-for-qa` or `qa-in-progress`.
-- Exit execution status: `complete` on `Go`; `ready-for-implementation` on `Conditional-Go` or `No-Go` when remaining issues are fixable in implementation; `blocked` only when QA cannot safely continue because docs, prerequisites, or process state are unresolved.
+- Exit execution status: `complete` on `Go`; `ready-for-implementation` on `Conditional-Go` or `No-Go` when remaining issues are fixable in implementation; `qa-deferred` on a `Conditional-Go` whose condition is not fixable in software; `blocked` only when QA cannot safely continue because docs, prerequisites, or process state are unresolved.
+
+### Deferred validation
+
+A `Conditional-Go` has two shapes, and only one of them is remediable by a developer:
+
+- **Software-fixable** — a defect, a gap, an acceptance mismatch. Exit `ready-for-implementation`, board item to **Ready For Dev**.
+- **Not software-fixable** — the code is complete and its criteria are met, but a validation step could not be performed for a reason no implementation pass can clear: no hardware, no device, no physical access. Exit `qa-deferred`, and the board item **holds at In Review**.
+
+For a `qa-deferred` outcome:
+
+- File or link a tracking issue naming the exact blocking prerequisite and the validation still owed. That issue is the record; a comment alone does not satisfy this.
+- Never regress the board item to **Ready For Dev**. There is no software work outstanding, and doing so misreports finished work as unfinished and queues it for a developer who cannot clear it.
+- Never present the outcome as a pass. Stand-in coverage is named as a stand-in, with the behavior of the real dependency that remains unverified stated explicitly.
+- Stage 6 may proceed on a `qa-deferred` item, but its retrospective must record the deferral and the tracking issue. Closing the delivery does not close the owed validation.
 
 ## Stage 6: Retrospective and Artifact Promotion
 
@@ -277,9 +370,11 @@ Rules:
 - Promote only artifacts that conform to templates.
 - Retrospective Agent may update other existing documents in `specs/<spec-name>/` to keep the dossier consistent after promotion.
 - Find the implementation repository where work occurred, then import working documents from `.agent-output/specs/<spec-name>/` into this docs repository for promotion review.
-- If the spec is marked `complete`, confirm implementation was delivered via pull request and merged to the implementation repository `main` branch.
+- **This stage is the only owner of merge-to-`main` and of the Done transition** (see [Pull Request Ownership](#pull-request-ownership)). Confirm the pull request is approved as defined in [Merge Approval](#merge-approval) — required checks green — then sync the latest `main` into the branch and resolve conflicts, so `main` is never merged from a stale branch, then merge.
+- Do not waive a missing required check. A repository whose check does not exist is blocked from merging until it does; file the missing check.
+- If the item arrived at `qa-deferred`, record the deferral and its tracking issue in the retrospective before merging. The owed validation stays open after the delivery closes.
 - If PR linkage or merge-to-main confirmation is missing, set status to `blocked` with explicit follow-up.
-- Entry gate execution status: `complete` or `blocked`.
+- Entry gate execution status: `complete`, `qa-deferred`, or `blocked`.
 - Canonical docs status update on close: set `complete` when PR merge-to-main is confirmed; set `blocked` when unresolved blockers remain.
 - Optional canonical status update: `blocked` -> `new` when blockers are converted into actionable documentation work.
 

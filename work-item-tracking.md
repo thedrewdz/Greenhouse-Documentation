@@ -43,7 +43,9 @@ Issues filed in any code repository (`services`, `ui`, `edge`, `peripherals`).
 
 - Status progression: **Todo → Ready For Dev → In Development → In Review → [ Ready For Dev → In Development → In Review (× n) ] → Done**
 - The loop (→ Ready For Dev → In Development → In Review) repeats until quality gates pass.
-- Executed on a short-lived feature branch; merged to `main` only via a reviewed pull request.
+- Executed on a short-lived feature branch; merged to `main` only via a pull request whose required status checks are green.
+- **Only the `retrospective` skill (Stage 6) merges the pull request and sets an item to Done.** The `test`, `code-review-agent`, and `qa` skills hand work over at **In Review** and never close it — see [Pull Request Ownership](workflows/feature-delivery-harness.md#pull-request-ownership).
+- A defect report carrying reproduction, root cause, and testable acceptance criteria is already groomed and is filed straight at **Ready For Dev** — it does not need `ba-po` grooming. See [Defect Intake and Promotion](workflows/feature-delivery-harness.md#defect-intake-and-promotion).
 - Use the `implementation` skill for all implementation tasks.
 
 ### Feature origination rule
@@ -60,6 +62,8 @@ Grooming produces:
 - Board status advances to **Ready For Dev** for each task and the epic.
 
 No implementation task should be created without the `ba-po` skill having completed grooming and set the spec to `ready-for-dev`.
+
+This rule governs **features**. It does not govern defects: a bug found by a delivery stage is filed by that stage and, when its report carries reproduction, root cause, and testable acceptance criteria, promoted straight to **Ready For Dev** without `ba-po` involvement. Sending a reproduced defect through discovery and grooming would change nothing about it. See [Defect Intake and Promotion](workflows/feature-delivery-harness.md#defect-intake-and-promotion).
 
 ## Single prioritized view
 
