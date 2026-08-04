@@ -146,32 +146,41 @@ Rules:
 
 **Do not use `gh search issues` for this.** GitHub's issue search tokenizes the query and does not honour the phrase, so it returns items that do not contain the line at all — verified 2026-08-04: both `gh search issues "Blocked by:"` and `gh search issues 'in:body "Blocked by"'` returned issues with no such line, including ones whose only connection was the word "by". A gate built on it would read as satisfied while missing real dependencies.
 
-Filter locally on an exact line match instead:
+Filter locally on a line match instead. **The pattern must tolerate Markdown emphasis around the label** — see the warning below:
 
 ```powershell
 # Every open item declaring a blocker, across the governed repositories
 $repos = 'Greenhouse-Documentation','Greenhouse-Services','Greenhouse-WebUI',
          'Greenhouse-Firmware','Greenhouse-Peripherals'
+$label = '(?m)^\s*(?:[*_]{1,2})?Blocked by:?(?:[*_]{1,2})?\s*\S+'
 foreach ($repo in $repos) {
   $issues = gh issue list -R "thedrewdz/$repo" --state open --limit 300 `
     --json number,title,body | ConvertFrom-Json
-  $issues | Where-Object { $_.body -match '(?m)^\s*Blocked by:\s*\S+' } |
+  $issues | Where-Object { $_.body -match $label } |
     ForEach-Object { "$repo#$($_.number)  $($_.title)" }
 }
 ```
 
 ```powershell
 # Which items does closing <n> unblock? Run before closing a decision issue.
-$blocker = 'thedrewdz/Greenhouse-Documentation#<n>'
+$blocker = [regex]::Escape('thedrewdz/Greenhouse-Documentation#<n>')
+$pattern = "(?m)^\s*(?:[*_]{1,2})?Blocked by:?(?:[*_]{1,2})?\s*$blocker"
 foreach ($repo in $repos) {
   $issues = gh issue list -R "thedrewdz/$repo" --state open --limit 300 `
     --json number,title,body | ConvertFrom-Json
-  $issues | Where-Object { $_.body -match [regex]::Escape("Blocked by: $blocker") } |
+  $issues | Where-Object { $_.body -match $pattern } |
     ForEach-Object { "$repo#$($_.number)  $($_.title)" }
 }
 ```
 
-The exact-line match is what makes this trustworthy, and it is why the convention requires a structured line rather than a sentence. Raise `--limit` if a repository ever exceeds 300 open issues; `gh` truncates silently rather than warning.
+**Write the label as plain `Blocked by:` with no emphasis.** A bolded `**Blocked by:**` is the same
+declaration to a human and a different string to a matcher, and the first version of this query — anchored
+on a bare `^\s*Blocked by:` — silently missed Greenhouse-Documentation#13 and #15 for exactly that reason
+while finding their unbolded twins. The pattern above tolerates emphasis because an author cannot be relied
+on to omit it, but do not depend on that tolerance: a query that misses a dependency reports "nothing is
+blocked" and is worse than no query at all.
+
+Raise `--limit` if a repository ever exceeds 300 open issues; `gh` truncates silently rather than warning.
 
 This exists because the relationship was previously prose. Four defects blocked on four decisions were promoted on 2026-08-04 only because one session closed the decisions and promoted the dependents in the same pass; the link lived nowhere but that session's comments. A promotion that works only when one actor holds both halves in context is not a process (Greenhouse-Documentation#55).
 
