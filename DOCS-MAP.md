@@ -25,6 +25,7 @@ Read these when the task touches broad architecture, platform boundaries, or cro
 - [main-unit-services-deployment.md](main-unit-services-deployment.md): operational procedure for deploying and starting the Main Unit services daemon (prerequisites, automatic first-run EF migration, configuration, launch, subsequent deploys, systemd autostart). Read when deploying or operating the services daemon on a host.
 - [device-model.md](device-model.md): Edge Unit, slot, module, telemetry, heartbeat, and device identity model.
 - [mqtt-topics.md](mqtt-topics.md): MQTT topic names, payload examples, command topics, telemetry, heartbeat, and canonical message contracts.
+- [error-code-ranges.md](error-code-ranges.md): canonical allocation of numeric error-code ranges across the platform, and which component owns each. **Read before adding any error code or allocating a range** — the ranges were previously allocated per-document with no registry, and collided.
 
 Do not load all platform orientation docs by default. Load the smallest set that covers the affected concepts.
 
@@ -41,6 +42,8 @@ Load architecture detail documents only when they match the task:
 - [architecture/testing.md](architecture/testing.md): test layers, contract tests, integration tests, and acceptance verification.
 
 Read [rest-api-standards.md](rest-api-standards.md) when adding or changing any Main Unit REST endpoint: route naming, HTTP verb usage, the named-command convention for actions, and the canonical status-code table. (Async/MQTT contracts are in [mqtt-topics.md](mqtt-topics.md).)
+
+Read [error-code-ranges.md](error-code-ranges.md) when reporting or consuming a numeric error code, in any transport. It fixes which component owns which range, so a failure is never attributed to the wrong unit.
 
 ## Domain And Journey Docs
 

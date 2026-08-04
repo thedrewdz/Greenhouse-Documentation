@@ -128,7 +128,7 @@ Edge Unit response contract (BLE status response):
 - error_code: stable integer when result is error
 - error_message: short diagnostic string for local UI
 
-Phase 1 minimum error code set (canonical):
+Phase 1 minimum error code set (canonical) — **2xxx codes are Edge Unit failures only**:
 
 - 0: success
 - 2001: unsupported_schema_version
@@ -142,6 +142,92 @@ Response rules:
 - If result is success, error_code must be 0 and error_message should be empty.
 - If result is error, error_code must be one of the non-zero codes above and error_message must be a short human-readable diagnostic.
 - Edge Unit must return exactly one error code per rejected payload.
+
+**A 2xxx code asserts that the Edge Unit examined the request and rejected it.** Only the Edge Unit may
+emit one. The Main Unit must never report its own failure with a 2xxx code — see Main Unit Failure
+Reporting below.
+
+## Main Unit Failure Reporting
+
+The Main Unit has failure modes the Edge Unit knows nothing about: a status read that was never
+dispatched, a reply that did not arrive in time, a transcript that would not parse, a connection that
+dropped mid-sequence, or preconditions that make a provisioning payload impossible to build. None of
+them is an Edge Unit fault, and none has a 2xxx code.
+
+**The Main Unit has its own range: 4xxx.** It is the only Main-Unit-originated range on the platform —
+`1xxx`, `2xxx`, and `3xxx` are all Edge Unit vocabularies. See
+[error-code-ranges.md](../../error-code-ranges.md) for the canonical allocation.
+
+Phase 1 minimum set (canonical):
+
+| Code | Name | Raised when |
+|---|---|---|
+| `4001` | `wifi_credentials_unavailable` | No WiFi credentials are stored on the Main Unit, so no payload can be built |
+| `4002` | `broker_address_unavailable` | The Main Unit could not determine its own local address to derive `mqtt_broker_uri` |
+| `4003` | `ble_transport_failure` | The BLE session failed, dropped, or could not be established |
+| `4004` | `status_response_empty` | A status read was dispatched and no value arrived within the read window |
+| `4005` | `status_response_malformed` | A status value arrived and could not be parsed as the documented response |
+| `4006` | `heartbeat_timeout` | Provisioning was accepted and no valid heartbeat arrived within the onboarding timeout |
+| `4099` | `main_unit_internal_error` | Any other Main Unit fault with no more specific code |
+
+Rules:
+
+- **The range identifies the origin.** `4xxx` means *the Main Unit could not complete the exchange*;
+  `2xxx` means *the Edge Unit rejected the request*. A client decides which unit to send the operator to
+  by reading the range, never by parsing the message text.
+- **`error_code` is never null on a failure.** A failure with no more specific code is `4099`, not null.
+  Null means "no failure". A client must never have to render a message with no code to interpret it.
+- **Silence is a Main Unit failure, not an Edge Unit message.** A status read that was dispatched and
+  produced no value is `4004`. The Edge Unit has only "said" something when bytes arrive; the absence of
+  a reply is the Main Unit's failure to receive it, never the Edge Unit's failure to persist. Reporting
+  it as `2099 internal_persistence_error` sends the operator to a unit that is working correctly, and
+  requires physical access to do it.
+- `4004` and `4005` are distinguishable to the operator by design: the first says the exchange timed
+  out and is worth retrying, the second says the reply was unusable and is not.
+
+These conventions replace two undocumented ones that arose from the absence of this range — Main Unit
+parse failures reported as `2099`, and a caught transport exception reported with a null code
+(Greenhouse-Services#83, Greenhouse-Documentation#32). Precondition failures previously borrowed `2003`
+and `2004`; they are now `4001` and `4002`.
+
+## Edge Unit Data Is Untrusted Input
+
+**Every value the Main Unit reads from an Edge Unit is untrusted input.** This covers advertised names,
+characteristic payloads, and every field within them — including `error_message`, which the firmware
+fills with `snprintf` from an arbitrary string and on which this spec deliberately places no content
+constraint. The right rule belongs on the consumer, not the producer.
+
+### Separate the channel from the content
+
+The Main Unit reaches its Edge Units over `bluetoothctl`, a human-facing shell whose output interleaves
+its own control messages with device data in one undelimited stream. Any transport built that way must
+separate the two **by framing, not by hoping the phrases do not collide**.
+
+- Device data must be excluded from control-signal matching. Do not scan a whole transcript for
+  refusal or status phrases when part of that transcript is a value the device supplied.
+- Traceable to Greenhouse-Services#82: an Edge Unit whose `error_message` contained `"not available"`
+  had its valid response discarded and replaced with a transport exception, because the read path
+  matched refusal phrases across the entire transcript including the value's ASCII column.
+- The inverse was reasoned out correctly and only locally — scan-output refusal matching was
+  deliberately kept narrow because "a neighbouring device could otherwise name itself into aborting
+  the scan". That insight was written as a code comment on one path and not generalised, which is why
+  it is a contract rule here.
+
+### Bound anything that reaches an operator or a log
+
+- Never include a device-supplied value verbatim in an operator-facing message or a log line without
+  bounding its length.
+- A `1xxx` code plus a Main-Unit-authored message is the operator-facing channel. Where device text is
+  included as a diagnostic, it is bounded and clearly attributed as coming from the device.
+
+### Write transcripts carry a credential
+
+The provisioning payload written over BLE contains `wifi_password`, so a **write** transcript contains a
+secret.
+
+- Never copy write-path transcript text into an exception message, a persisted error, or a log line.
+- This interacts with the bare-minimum-logging stance for the Main Unit: the safe default is to log
+  neither the transcript nor the payload, and to report the failure by code.
 
 ## Non-Functional Constraints
 

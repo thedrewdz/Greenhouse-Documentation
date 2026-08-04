@@ -90,8 +90,8 @@ Session.
 
 ### Reconfiguration
 
-- When a heartbeat arrives from a known Edge Unit and slot topology or module identity differs from stored mapping, show a reconfiguration prompt that identifies the detected changes.
-- When the user confirms reconfiguration, store the new mapping, publish updates to the Edge Unit, and resume normal operation.
+- When a heartbeat arrives from a known Edge Unit and slot topology or module identity differs from stored mapping, the backend records `topologyDriftDetectedAt` and publishes an `EdgeUnitTopologyChanged` event. The UI reads `GET /api/edge-units/{device_id}` and shows a reconfiguration prompt identifying the detected changes as the difference between `slots` and `observedSlots`.
+- When the user confirms reconfiguration, store the new mapping, publish updates to the Edge Unit, and resume normal operation. `topologyDriftDetectedAt` clears when the replacement mapping is acknowledged with `result=success`.
 
 ## API Contracts
 
@@ -132,7 +132,9 @@ Returns 409 if an onboarding session is already active.
 ```
 
 `candidates` is empty when `status` is `idle`, and is ordered by discovery time — earliest first.
-`errorCode` and `errorMessage` are null unless `status` is `failed`.
+`errorCode` and `errorMessage` are null unless `status` is `failed`, and both are **always populated when
+`status` is `failed`** — see `errorCode` on the onboarding API for the code ranges and what they tell a
+client.
 
 #### Candidate Ordering and Signal Strength
 
@@ -225,11 +227,16 @@ error — it is never a licence to act on a different session.
       "unitName": "East Sensor Unit",
       "location": "Zone A",
       "mappingStatus": "acknowledged",
+      "topologyDriftDetectedAt": null,
       "lastHeartbeatAt": "2026-07-01T22:00:00Z"
     }
   ]
 }
 ```
+
+`topologyDriftDetectedAt` is null when no drift is outstanding. A non-null value means the last
+heartbeat reported a topology that differs from the stored mapping, and the prior mapping is still
+active — see EdgeUnitTopologyChanged.
 
 ### GET /api/edge-units/{device_id} — 200 OK / 404
 
@@ -243,12 +250,36 @@ Returns the full registered Edge Unit including last-known slot topology from he
   "location": "Zone A",
   "mappingVersion": 1,
   "mappingStatus": "acknowledged",
+  "topologyDriftDetectedAt": null,
   "lastHeartbeatAt": "2026-07-01T22:00:00Z",
   "slots": [
     { "slotId": 0, "role": "sensor", "capability": "moisture", "label": "Bed A Moisture", "i2cAddress": "0x25" }
+  ],
+  "observedSlots": null
+}
+```
+
+`slots` is the **active acknowledged mapping**. `observedSlots` is the slot topology the most recent
+heartbeat actually reported, and is populated **only while `topologyDriftDetectedAt` is non-null**:
+
+```json
+{
+  "topologyDriftDetectedAt": "2026-08-04T10:15:00Z",
+  "slots": [
+    { "slotId": 0, "role": "sensor", "capability": "moisture", "label": "Bed A Moisture", "i2cAddress": "0x25" }
+  ],
+  "observedSlots": [
+    { "slotId": 0, "i2cAddress": "0x25" },
+    { "slotId": 1, "i2cAddress": "0x41" }
   ]
 }
 ```
+
+`observedSlots` entries carry only what a heartbeat reports — `slotId` and `i2cAddress`. They have no
+`role`, `capability`, or `label`, because those are mapping decisions the operator makes and the Edge
+Unit does not know. Rendering which slots were added, removed, or changed is a presentation concern: the
+UI displays the difference between the two sets. The backend does not publish a diff, so there is one
+authoritative shape for topology rather than two that can disagree.
 
 `mappingStatus` values: `pending-mapping` | `publish-pending` | `published` | `acknowledged` | `failed`.
 
@@ -345,10 +376,31 @@ Published on every state transition throughout the workflow.
 ```
 
 `status` values match the onboarding state table above. `errorCode` and `errorMessage` are
-non-null only when `status` is `failed`.
+non-null only when `status` is `failed`, and are always non-null when it is.
+
+### EdgeUnitTopologyChanged
+
+Published when a heartbeat from a **known** Edge Unit reports a slot topology or module identity that
+differs from its stored mapping.
+
+```json
+{ "deviceId": "1ADD5912AF61", "detectedAt": "2026-08-04T10:15:00Z" }
+```
+
+The event is a notification, not the data. On receipt the UI reads
+`GET /api/edge-units/{device_id}` for the drift detail — `topologyDriftDetectedAt`, the active `slots`,
+and the `observedSlots` the heartbeat reported. This keeps one authoritative shape for topology instead
+of duplicating it in a hub payload, and it is what lets the reconfiguration prompt appear within the
+5-second requirement without the event carrying state that could go stale in flight.
+
+- Published on the transition into drift, not on every subsequent heartbeat that still differs. A unit
+  already in drift does not re-notify until the drift is resolved and re-detected.
+- `mappingStatus` stays `acknowledged` while drift is pending, because the prior mapping remains active.
+  Drift is reported by `topologyDriftDetectedAt`, never by `mappingStatus`.
 
 Polling fallback: If SignalR is unavailable, the UI polls `GET /api/onboarding` at a 1-second
-interval. The backend state is always authoritative; SignalR is an observation channel only.
+interval, and detects drift from `topologyDriftDetectedAt` on the Edge Unit resources. The backend state
+is always authoritative; SignalR is an observation channel only.
 
 ## Data Contracts and Schemas
 
@@ -358,6 +410,37 @@ interval. The backend state is always authoritative; SignalR is an observation c
 - The BLE provisioning response shape and canonical onboarding error code set live in [../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md).
 - This spec uses that contract as the provisioning boundary and focuses on the user-facing orchestration around it.
 - Main Unit backend should map returned BLE `error_code` values to canonical onboarding status details. The UI should display those details without redefining code semantics locally.
+
+#### Which side owns which failure
+
+The boundary assigns fault as well as shape. Two ranges apply to onboarding, both defined in
+[../edge-unit-onboarding/spec.md](../edge-unit-onboarding/spec.md); the full platform allocation is in
+[../../error-code-ranges.md](../../error-code-ranges.md):
+
+| Range | Origin | Means | Operator is told |
+|---|---|---|---|
+| `2xxx` | Edge Unit | The Edge Unit examined the request and rejected it | Check the Edge Unit |
+| `4xxx` | Main Unit | The Main Unit could not complete the exchange | The Main Unit could not finish; the Edge Unit may be fine |
+
+- Only the Edge Unit may emit a `2xxx` code. The Main Unit must never report its own failure with one.
+- `4xxx` is the **only** Main-Unit-originated range. `1xxx` and `3xxx` are Edge Unit vocabularies for
+  device responses and configuration acks respectively, and are not available for Main Unit faults.
+- **Data read from an Edge Unit is untrusted input** — see Edge Unit Data Is Untrusted Input in the
+  onboarding spec. That rule governs how the Main Unit may treat `error_message` and every other
+  device-supplied value, and it applies to every consumer of this boundary.
+- A status read that returns nothing is a Main Unit failure (`4004`), not an Edge Unit message. Silence
+  is not an answer.
+
+#### `errorCode` on the onboarding API
+
+`errorCode` is **the onboarding failure code, whatever its origin** — not "the Edge Unit's code". Its
+range tells a client which unit to point the operator at.
+
+- `errorCode` is null only when `status` is not `failed`. **On `failed` it is always populated**, using
+  `4099` when no more specific Main Unit code applies.
+- A client must decide its operator wording from the range, never by matching text in `errorMessage`.
+- `errorMessage` is authored by the Main Unit. Where it quotes a device-supplied value, that value is
+  bounded and attributed — never pattern-matched for control meaning.
 
 ### Runtime Configuration Publish Contract (Main Unit to Edge Unit)
 
@@ -431,7 +514,8 @@ Ack response rules:
 - If `result` is `error`, `error_code` must be non-zero and `error_message` must be a short diagnostic string.
 - Edge Unit must emit exactly one ack message for each received configuration message.
 
-Phase 1 minimum runtime-configuration error code set:
+Phase 1 minimum runtime-configuration error code set — **Edge Unit** codes in the `3xxx` range, see
+[../../error-code-ranges.md](../../error-code-ranges.md):
 
 - `0`: success
 - `3001`: unsupported_schema_version
@@ -593,6 +677,11 @@ that window is the first boot after a power cut.
 20. Given an onboarding session in a non-terminal status, when the daemon is stopped inside the scan window and restarted, then the session is `idle` and `no-device-found` was not written.
 21. Given mappings at `publish-pending` or at `failed` with an auto-recoverable `failureReason`, when `IMessagingService` transitions to connected, then each is re-published once with its original `message_id` and `mapping_version`, and mappings at `ack-timeout` or `rejected` are not re-published.
 22. Given a broker that connects and disconnects repeatedly, when reconnect events arrive within 5 seconds of each other, then recovery passes are coalesced and no unit has more than one publish request in flight.
+23. Given a Main Unit precondition failure — no stored WiFi credentials, or no local address from which to derive `mqtt_broker_uri` — when onboarding is started, then `status` is `failed` with `errorCode` `4001` or `4002` respectively, and never a `2xxx` code.
+24. Given a status read that was dispatched and returned no value within the read window, when the result is reported, then `errorCode` is `4004` and the operator is not told the Edge Unit failed to persist its configuration.
+25. Given provisioning accepted and no valid heartbeat within the 90-second timeout, when the session fails, then `errorCode` is `4006` and is not null.
+26. Given an Edge Unit whose `error_message` contains text that matches a transport control phrase, when the Main Unit reads that response, then the response is accepted on its framing and is not discarded as a transport failure.
+27. Given a known Edge Unit whose heartbeat reports a slot topology differing from its stored mapping, when drift is detected, then `topologyDriftDetectedAt` is set, `observedSlots` is populated, an `EdgeUnitTopologyChanged` event is published once for that transition, and `mappingStatus` remains `acknowledged`.
 
 ## Deferred Work
 

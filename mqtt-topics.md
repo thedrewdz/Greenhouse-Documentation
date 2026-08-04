@@ -217,7 +217,9 @@ Field requirements and types:
 
 - Commands can result in an error
 - especially if a user misconfigures a unit during setup. 
-- Use a minimum stable Phase 1 error code set:
+- Use a minimum stable Phase 1 error code set. These are **Edge Unit** codes in the `1xxx` range — see
+  [error-code-ranges.md](error-code-ranges.md) for the platform-wide allocation and the rule that a
+  component never emits a code from a range it does not own:
   - `0` = `none`
   - `1000` = `unknown_command`
   - `1001` = `invalid_payload`
