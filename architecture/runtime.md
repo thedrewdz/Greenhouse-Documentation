@@ -83,7 +83,36 @@ Do not add topic-specific methods such as `PublishHeartbeatAsync`, `HandleAckAsy
 PublishAsync(topic: string, payload: string, cancellationToken) → Task
 Subscribe(topicPattern: string, handler: Func<MessageEnvelope, Task>) → void
 Unsubscribe(topicPattern: string) → void
+IsConnected: bool                                    — current transport connection state
+ConnectionStateChanged: event Action<bool>            — raised when IsConnected changes
 ```
+
+#### Connection state
+
+`IsConnected` and `ConnectionStateChanged` exist so a consumer can recover work that failed while the
+transport was down. Without them the messaging layer reconnects silently and nothing outside it can
+observe that it happened, so a publish that failed during an outage is never retried
+(Greenhouse-Services#48).
+
+Rules:
+
+- **Transport-neutral.** No MQTTnet or other transport types cross this boundary. The event carries a
+  `bool`, not a broker-specific state object or disconnect reason.
+- **A state, not just an edge.** `IsConnected` must be readable at any time. A consumer that starts
+  mid-outage needs to know the transport is down without having waited for the transition, and a
+  consumer that starts while connected must not block waiting for an event that already fired.
+- **This is a mechanism, not a policy.** The contract reports connection state; it does not decide what
+  to re-send. Deciding which work to recover belongs to the consuming use case — see the publish
+  recovery rules in [edge-unit-configuration](../specs/edge-unit-configuration/spec.md).
+- **No second way to say the same thing.** Do not add a `WaitForConnectionAsync`, a reconnect callback
+  registration, or a connected-state parameter to `PublishAsync`. One state plus one change event is the
+  whole surface.
+- `PublishAsync` behavior is unchanged: it still throws when the transport is not connected. Checking
+  `IsConnected` first is an optimisation, never a guarantee — the state can change between the check
+  and the call.
+
+Handlers are invoked on the thread pool and must not block. A slow handler must not delay reconnection
+or other subscribers.
 
 `MessageEnvelope` carries transport metadata only:
 

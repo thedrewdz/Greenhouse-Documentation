@@ -292,7 +292,7 @@ Expose UI-facing capabilities through backend REST API endpoints.
 API rules:
 
 - Requests must be stateless: each request must contain the identifiers and payload needed to process it without relying on per-client request memory.
-- Mutating calls must be idempotent from the UI client's point of view. Repeating `start`, `cancel`, or `provision` for the same active unit must return the current backend state rather than duplicate work.
+- Mutating calls must be idempotent from the UI client's point of view. Repeating `start`, `cancel`, or `provision` for the same active unit must return the current backend state rather than duplicate work. Idempotence is not permissiveness: a device-scoped call naming a device that is not the active one is an error, not a no-op.
 - Long-running operations must return or update backend-owned resource state rather than keeping progress in the UI.
 - Response bodies should be resource representations or operation status DTOs.
 - API handlers should call application commands/queries and should not own business policy.
@@ -305,10 +305,16 @@ GET /api/edge-units
 GET /api/edge-units/{device_id}
 GET /api/onboarding
 POST /api/onboarding/scan
+POST /api/onboarding/cancel
 POST /api/onboarding/{device_id}/start
 POST /api/onboarding/{device_id}/provision
 POST /api/onboarding/{device_id}/cancel
 ```
+
+The two cancel routes are not interchangeable: the collection-scoped one cancels whatever session is
+active and needs no device id, while the device-scoped one acts only when the id matches the active
+session and returns 409 or 404 otherwise. See
+[specs/edge-unit-configuration/spec.md](specs/edge-unit-configuration/spec.md).
 
 Polling is acceptable for Phase 1 workflow progress:
 

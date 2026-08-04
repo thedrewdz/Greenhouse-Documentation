@@ -99,15 +99,20 @@ both the server and the caller: "update an Edge Unit" could mean re-map its slot
 decommission it — each with different validation, side effects, and authorization. Named commands
 make the intent explicit.
 
-**Form:** `POST /<collection>/{id}/<command>`, where `<command>` is a **kebab-case verb** naming the
-action. The command is a sub-path of the resource it acts on, not a verb-shaped collection.
+**Form:** `POST /<collection>/{id}/<command>` for a command on a single resource, or
+`POST /<collection>/<command>` for a command on the collection or the workflow it represents.
+`<command>` is a **kebab-case verb** naming the action. The command is a sub-path of the thing it acts
+on, not a verb-shaped collection.
 
 ```
 # Instead of overloading a verb:
 PATCH /api/onboarding/{device-id}     { "status": "cancelled" }
 
-# Name the action:
+# Name the action, scoped to the resource:
 POST  /api/onboarding/{device-id}/cancel
+
+# Or scoped to the collection / workflow, where no single resource is the target:
+POST  /api/onboarding/cancel
 ```
 
 **Rules:**
@@ -116,6 +121,18 @@ POST  /api/onboarding/{device-id}/cancel
   parameters the action needs.
 - Name the command as a verb or verb phrase in kebab-case (`decommission`, `reset-mapping`).
 - Keep commands as sub-paths of a resource or collection — never a top-level verb URL.
+- **Scope the command to the narrowest thing it actually acts on.** If a command needs an `{id}` to
+  identify its target, that id must be *honoured* — a value that does not match the current target is a
+  409 or 404, never a licence to act on something else. If the operation is inherently
+  collection-scoped, give it a collection-scoped route rather than making callers supply an id it will
+  ignore.
+- **Do not force an id onto an operation that has none.** Cancelling a scan that has discovered nothing
+  has no device to name. Where both scopes are real, publish both routes with distinct semantics — see
+  the two onboarding cancel routes in
+  [specs/edge-unit-configuration/spec.md](specs/edge-unit-configuration/spec.md). Traceable to
+  Greenhouse-Services#76, where the device-scoped route accepted any id and cancelled the running
+  session regardless, so a client wanting to stop an empty scan had to invent one — and inventing one
+  worked.
 - A command returns the affected resource representation, or an operation/status resource for
   long-running work (see the async-workflow guidance in
   [architecture/boundaries.md](architecture/boundaries.md)).
@@ -124,8 +141,9 @@ POST  /api/onboarding/{device-id}/cancel
 
 ```
 POST /api/onboarding/scan                         # begin a BLE scan session
+POST /api/onboarding/cancel                       # cancel whatever session is active (no device needed)
 POST /api/onboarding/{device-id}/start            # begin auto-provisioning a selected candidate
-POST /api/onboarding/{device-id}/cancel           # cancel the active onboarding session
+POST /api/onboarding/{device-id}/cancel           # cancel the session for this device only; 409 on mismatch
 POST /api/edge-units/{device-id}/decommission     # remove an Edge Unit, retaining history
 POST /api/edge-units/{device-id}/reboot           # command a known Edge Unit to restart
 POST /api/edge-units/{device-id}/identify          # flash the unit's indicator to locate it

@@ -43,7 +43,7 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 - If the user navigates away, the UI may stop observing the hub, but navigation alone must not cancel the backend scan. Explicit cancel actions must call the backend cancellation API.
 - If no Edge Unit is discovered before timeout, the backend marks onboarding as `no-device-found` and publishes a state-change event. The UI shows a clear no-device state with a Restart action.
 - While scanning, the backend records each actively advertising Edge Unit as a discovered device candidate for the active onboarding workflow.
-- The UI displays candidates with identity and signal quality as they arrive via the hub. The user must explicitly tap a candidate to select it even if only one is discovered.
+- The UI displays candidates with identity as they arrive via the hub, in the order they were discovered. No signal-strength or proximity indication is available in Phase 1 — see Candidate Ordering and Signal Strength. The user must explicitly tap a candidate to select it even if only one is discovered.
 - After the user selects a candidate, the UI calls `POST /api/onboarding/{device_id}/start`. The backend stops scanning and begins full auto-provisioning:
   - Reads WiFi credentials from the `WifiCredentials` table.
   - Derives `mqtt_broker_uri` from the Main Unit's local network address via `INetworkConnector.GetLocalAddressAsync()`.
@@ -62,7 +62,8 @@ This spec replaces the former Edge Unit onboarding and reconfiguration journey d
 
 - UI-to-backend interactions must use RESTful API resources.
 - API calls must be stateless; the request path, selected `device_id`, action, and request payload must carry the context needed for each request.
-- Mutating workflow calls must be idempotent from the UI client's point of view. Repeating the same `start` or `cancel` request for the same active unit must return the current onboarding state rather than duplicate BLE work.
+- Mutating workflow calls must be idempotent from the UI client's point of view. Repeating the same `start` or `cancel` request for the same active unit must return the current onboarding state rather than duplicate BLE work. Idempotence does not mean permissiveness: a device-scoped call naming a device that is not the active one is an error, not a no-op — see Cancelling an Onboarding Session.
+- A cancel action that is not scoped to a specific device — stopping a scan that has found nothing — must call the session-scoped `POST /api/onboarding/cancel`. A client must never fabricate a `device_id` to reach a device-scoped route.
 - The UI must not call BLE adapters, MQTT adapters, repositories, or application services directly.
 - The primary real-time channel is the SignalR hub at `/hubs/onboarding`. The UI subscribes on startup and receives state changes and device discovery events throughout the workflow. Polling `GET /api/onboarding` is the documented fallback if SignalR is unavailable.
 
@@ -71,12 +72,16 @@ API resource paths:
 ```text
 POST /api/onboarding/scan
 GET  /api/onboarding
+POST /api/onboarding/cancel
 POST /api/onboarding/{device_id}/start
 POST /api/onboarding/{device_id}/cancel
 GET  /api/edge-units
 GET  /api/edge-units/{device_id}
 PUT  /api/edge-units/{device_id}/mapping
 ```
+
+There are **two** cancel routes and they are not interchangeable — see Cancelling an Onboarding
+Session.
 
 ### Runtime Registration and Slot Mapping
 
@@ -118,7 +123,7 @@ Returns 409 if an onboarding session is already active.
 {
   "status": "scanning",
   "candidates": [
-    { "deviceId": "1ADD5912AF61", "advertisedName": "GH-Edge-1ADD5912AF61", "rssi": -60 }
+    { "deviceId": "1ADD5912AF61", "advertisedName": "GH-Edge-1ADD5912AF61" }
   ],
   "selectedDeviceId": null,
   "errorCode": null,
@@ -126,8 +131,32 @@ Returns 409 if an onboarding session is already active.
 }
 ```
 
-`candidates` is empty when `status` is `idle`. `errorCode` and `errorMessage` are null unless
-`status` is `failed`.
+`candidates` is empty when `status` is `idle`, and is ordered by discovery time — earliest first.
+`errorCode` and `errorMessage` are null unless `status` is `failed`.
+
+#### Candidate Ordering and Signal Strength
+
+**Candidates carry no signal-strength field and are ordered by discovery time, not proximity.**
+
+An earlier revision of this contract specified an `rssi` field and ordering by descending RSSI so the
+nearest unit sorted first. Both are removed: `bluetoothctl` 5.66 emits no RSSI lines during a scan, so
+the field was null on every real device and the ordering guarantee had nothing to sort by. Verified on
+the test Pi against a live ESP32 — a 25-second scan produced zero lines matching `RSSI` or `TxPower`
+(Greenhouse-Services#73).
+
+A contract must not publish a field that is never populated, so the honest contract is the one above.
+Consequences to accept:
+
+- The operator has no proximity signal when several units are in range. Distinguishing this
+  greenhouse's unit from a neighbour's relies on the `device_id` in the advertised name, which the
+  operator can read off the unit.
+- No client may sort, filter, or badge candidates by signal strength, because the data does not exist.
+
+Restoring a proximity signal requires reading `org.bluez.Device1.RSSI` over D-Bus rather than parsing
+`bluetoothctl` output. That is a scan-transport change, deferred — see Out-of-Scope / Deferred Work. If
+it is taken, `rssi` and an ordering guarantee return to this contract together, and the parser must
+handle the real on-device format (`RSSI: 0xffffffc4 (-60)` — hex plus a parenthesised decimal), not the
+plain integer the removed branch assumed.
 
 ### POST /api/onboarding/{device_id}/start — 202 Accepted
 
@@ -141,11 +170,49 @@ automatically.
 Returns 404 if `device_id` is not a current candidate. Returns 409 if a different device is
 already selected.
 
-### POST /api/onboarding/{device_id}/cancel — 200 OK
+### Cancelling an Onboarding Session
+
+Cancellation has two routes because it answers two different questions. The session-scoped one is
+required: a scan that has discovered nothing has no `device_id` for the caller to name.
+
+#### POST /api/onboarding/cancel — 200 OK
+
+Cancels **whatever onboarding session is currently active**, whether or not a device has been selected.
+This is the route a "Stop scanning" control calls.
 
 ```json
 { "status": "idle" }
 ```
+
+- Returns 200 with `{ "status": "idle" }` when a session was cancelled.
+- Returns 200 with `{ "status": "idle" }` when no session was active — cancelling nothing is a
+  success, which keeps the call idempotent for a client that has lost track of state.
+- Takes no request body and no device id.
+
+#### POST /api/onboarding/{device_id}/cancel — 200 OK
+
+Cancels the active session **only if it is the session for `device_id`**. Use this when the client
+believes a specific device is being onboarded and must not cancel anything else.
+
+```json
+{ "status": "idle" }
+```
+
+- Returns 200 when `device_id` matches the currently selected device.
+- Returns **409 Conflict** when a session is active for a different device, or when a session is active
+  with no device selected yet (still scanning). The active session is left running.
+- Returns **404 Not Found** when `device_id` is neither the selected device nor a current candidate.
+
+**The device id must be honoured, not ignored.** Before this was specified, the endpoint accepted any
+value and cancelled the active session regardless: `POST /api/onboarding/000000000000/cancel` returned
+`200 {"status":"idle"}` for an id that was never discovered and does not exist
+(Greenhouse-Services#76). Two consequences made that worse than cosmetic — a UI wanting to stop an
+empty scan had to invent an id, and inventing one *worked*, so the workaround would have become the de
+facto contract; and a stale client cancelling a device it believed was onboarding would silently cancel
+whichever session was actually running.
+
+A path parameter that scopes nothing is a contract defect. If a caller names a device, a mismatch is an
+error — it is never a licence to act on a different session.
 
 ### GET /api/edge-units — 200 OK
 
@@ -184,6 +251,29 @@ Returns the full registered Edge Unit including last-known slot topology from he
 ```
 
 `mappingStatus` values: `pending-mapping` | `publish-pending` | `published` | `acknowledged` | `failed`.
+
+**Transient versus terminal.** `publish-pending` and `published` are **transient** — each asserts that a
+publisher is actively working on this mapping right now. `pending-mapping`, `acknowledged`, and `failed`
+are **terminal**: they rest indefinitely and are the only statuses an operator may be shown as a
+settled state. The distinction is load-bearing; see Restart and Reconnect Recovery.
+
+When `mappingStatus` is `failed`, the detail response also carries `failureReason`:
+
+```json
+{ "mappingStatus": "failed", "failureReason": "broker-unreachable" }
+```
+
+`failureReason` values, and whether the Main Unit may recover from each without operator action:
+
+| `failureReason` | Meaning | Auto-recoverable |
+|---|---|---|
+| `broker-unreachable` | Every publish attempt failed because the transport was down | Yes |
+| `interrupted` | A restart or shutdown ended the publish with no outcome | Yes |
+| `ack-timeout` | Published successfully; the Edge Unit never acknowledged within the retry budget | No |
+| `rejected` | The Edge Unit acknowledged with a non-zero `result` code | No |
+
+`failureReason` is null for every status other than `failed`. A non-recoverable reason means the Edge
+Unit itself did not cooperate, so retrying without operator involvement would loop.
 
 ### PUT /api/edge-units/{device_id}/mapping — 200 OK / 404 / 422
 
@@ -233,11 +323,13 @@ Hub path: `/hubs/onboarding`
 
 ### DeviceDiscovered
 
-Published during scanning when a new candidate is found.
+Published during scanning when a new candidate is found. One event per candidate, in discovery order.
 
 ```json
-{ "deviceId": "1ADD5912AF61", "advertisedName": "GH-Edge-1ADD5912AF61", "rssi": -60 }
+{ "deviceId": "1ADD5912AF61", "advertisedName": "GH-Edge-1ADD5912AF61" }
 ```
+
+No signal-strength field — see Candidate Ordering and Signal Strength.
 
 ### OnboardingStateChanged
 
@@ -375,7 +467,68 @@ If local validation fails:
 - Main Unit retry budget is 3 total publish attempts per configuration update.
 - Retry delay schedule is fixed at 1 second, then 2 seconds between retries.
 - If timeout occurs and retries remain, Main Unit retries with the same `message_id` and `mapping_version`.
-- If timeout occurs on the third attempt, Main Unit marks publish as failed and shows retry or cancel actions.
+- If timeout occurs on the third attempt, Main Unit marks publish as `failed` with `failureReason` `ack-timeout` and shows retry or cancel actions.
+- If every attempt fails because the transport was down rather than unacknowledged, Main Unit marks publish as `failed` with `failureReason` `broker-unreachable`, which is auto-recoverable — see Restart and Reconnect Recovery.
+
+### Restart and Reconnect Recovery
+
+**The governing invariant: no operation may leave a durable status implying it completed, or implying
+that something is still working on it, when nothing is.**
+
+Two triggers break that invariant, and both are observed defects rather than hypotheticals.
+
+#### On daemon start
+
+Any mapping found in a **transient** status (`publish-pending`, `published`) has no publisher — the
+process that owned it is gone. Reconcile at startup:
+
+- Set it to `failed` with `failureReason` `interrupted`. Retain the mapping, its `mapping_version`, and
+  its `message_id`.
+- Because `interrupted` is auto-recoverable, the mapping is then re-published by the recovery pass below
+  rather than waiting for the operator.
+- Never leave it transient. `published` means "sent, waiting for the Edge Unit to confirm"; after a
+  restart it means "abandoned", and the two must not look the same to an operator. Observed on-device:
+  a mapping sat at `published` indefinitely across repeated restarts with no republish, no retry budget,
+  and no ack timeout (Greenhouse-Services#74).
+
+Any **onboarding session** found in a non-terminal status (`scanning`, `provisioning`,
+`awaiting-heartbeat`) is reset to `idle` at startup:
+
+- `no-device-found` may only be written by a scan window that actually elapsed. The teardown path must
+  never stamp a terminal scan outcome. Observed on-device: stopping the service five seconds into a
+  30-second window persisted `no-device-found`, which then survived every later restart — a definitive
+  "no Edge Unit found" verdict produced by a scan that never finished, sending the operator to check
+  hardware that was fine (Greenhouse-Services#77).
+- `idle` is the truthful state for "no scan has completed since startup".
+
+#### On transport reconnect
+
+The Main Unit observes reconnection through `IMessagingService.ConnectionStateChanged` — see the
+[IMessagingService contract](../../architecture/runtime.md#imessagingservice-contract). On a transition
+to connected:
+
+- Re-publish every mapping at `publish-pending`, and every mapping at `failed` whose `failureReason` is
+  auto-recoverable (`broker-unreachable`, `interrupted`).
+- Do **not** re-publish `ack-timeout` or `rejected`. The transport was never the problem; the Edge Unit
+  was, and retrying without operator involvement loops.
+- Re-publish with the **same** `message_id` and `mapping_version` so the Edge Unit can deduplicate a
+  configuration it may already have applied.
+- Restore the full retry budget for a re-published mapping. It is a fresh delivery attempt, not a
+  continuation.
+
+De-duplication, which a flapping broker makes mandatory rather than nice to have:
+
+- Skip any unit that already has a publish request in flight. Each re-enqueue otherwise costs a full
+  retry budget per unit, and a broker that flaps fires the signal repeatedly.
+- Apply a minimum interval of 5 seconds between recovery passes. A reconnect arriving inside that
+  window is coalesced into the pending pass, never queued as a second one.
+- Recovery is a query over stored mapping state, not a queue held in memory. It must produce the same
+  result whether the transport dropped for one second or the daemon was restarted in between.
+
+Without this, a mapping accepted while the broker was down reached a truthful `failed` and was then
+never delivered — the only exit was the operator re-submitting an identical mapping, and nothing
+prompted them to (Greenhouse-Services#48). On a Pi where Mosquitto and the daemon start independently,
+that window is the first boot after a power cut.
 
 ### Error-Code-Driven Main Unit Behavior
 
@@ -418,9 +571,9 @@ If local validation fails:
 
 ## Acceptance Criteria
 
-1. Given a new unprovisioned Edge Unit in Provisioning Mode, when the UI triggers backend onboarding scan, then backend BLE scanning starts within 2 seconds and `GET /api/onboarding` exposes discovered devices with identity and signal quality.
+1. Given a new unprovisioned Edge Unit in Provisioning Mode, when the UI triggers backend onboarding scan, then backend BLE scanning starts within 2 seconds and `GET /api/onboarding` exposes discovered devices by identity, with no signal-strength field.
 2. Given no advertising Edge Unit, when scan reaches 30 seconds, then backend onboarding state becomes no-device-found, the UI shows Restart, and the backend does not keep scanning.
-3. Given multiple advertising Edge Units are discovered during active onboarding scan, when the UI requests `GET /api/onboarding`, then the backend returns all currently active candidates with identity and signal quality.
+3. Given multiple advertising Edge Units are discovered during active onboarding scan, when the UI requests `GET /api/onboarding`, then the backend returns all currently active candidates by identity, ordered by discovery time, with no signal-strength field and no proximity ordering claim.
 4. Given the UI submits `POST /api/onboarding/{device_id}/start`, when that `device_id` is still an active candidate, then the backend pairs with that Edge Unit and records selected-device status.
 5. Given the backend receives a valid provisioning payload accepted by the Edge Unit, when the first valid heartbeat from selected `device_id` arrives within 90 seconds, then the backend marks onboarding `mapping-required`, persists the heartbeat state, and publishes an `OnboardingStateChanged` event.
 6. Given onboarding input rejected by BLE provisioning validation, when Edge Unit returns non-zero onboarding `error_code`, then backend onboarding status exposes explicit error details and allows retry without losing selected device context.
@@ -434,6 +587,12 @@ If local validation fails:
 14. Given accepted runtime mapping update, when persistence occurs, then mapping write is atomic and no partial mapping state is observable.
 15. Given the UI refreshes, disconnects, or navigates away during onboarding, when `GET /api/onboarding` is requested again, then the current backend-owned onboarding state is returned without relying on UI memory.
 16. Given the UI repeats a mutating onboarding request for the same `device_id` and action, when the backend has already accepted that action, then the backend returns the current onboarding state without duplicating BLE scan, pairing, provisioning, or cancellation work.
+17. Given a scan in progress that has discovered no candidates, when the UI calls `POST /api/onboarding/cancel`, then the scan is cancelled and the state becomes `idle` without the client supplying any `device_id`.
+18. Given a session active for one device, when `POST /api/onboarding/{device_id}/cancel` names a different device or an unknown id, then the backend returns 409 or 404 respectively and the active session continues running.
+19. Given a mapping in a transient status (`publish-pending` or `published`), when the daemon restarts, then that mapping is `failed` with `failureReason` `interrupted` and no mapping remains transient with no publisher.
+20. Given an onboarding session in a non-terminal status, when the daemon is stopped inside the scan window and restarted, then the session is `idle` and `no-device-found` was not written.
+21. Given mappings at `publish-pending` or at `failed` with an auto-recoverable `failureReason`, when `IMessagingService` transitions to connected, then each is re-published once with its original `message_id` and `mapping_version`, and mappings at `ack-timeout` or `rejected` are not re-published.
+22. Given a broker that connects and disconnects repeatedly, when reconnect events arrive within 5 seconds of each other, then recovery passes are coalesced and no unit has more than one publish request in flight.
 
 ## Deferred Work
 
@@ -441,6 +600,13 @@ If local validation fails:
 - Bulk onboarding for multiple Edge Units at once.
 - Historical diff view for prior Edge Unit configurations.
 - Advanced capability inference from I2C ranges beyond initial defaults.
+- **D-Bus BLE scanning, and with it a restored proximity signal.** Reading `org.bluez.Device1.RSSI`
+  over D-Bus would make candidate signal strength available, which parsing `bluetoothctl` output cannot
+  — see Candidate Ordering and Signal Strength. This is a scan-transport change, not a parser fix. If
+  taken, `rssi` and a proximity-ordering guarantee return to the candidate contract together.
+- **Resuming an interrupted publish rather than restarting it.** Restart and Reconnect Recovery re-sends
+  a mapping from the beginning with a fresh retry budget. Resuming mid-budget would need the in-flight
+  attempt count persisted, and buys little over a clean re-send that the Edge Unit deduplicates.
 
 ## Open Questions
 
