@@ -66,7 +66,7 @@ Must be one of the canonical work types (the same values used in the `Branch And
 - The branch `<type>` and `<descriptor>` must match the `Work type` and spec name recorded in the implementation plan.
 - Merge to `main` only through a pull request that has passed the Code Review Gate and whose required status checks are green — see [Merge Approval](workflows/feature-delivery-harness.md#merge-approval).
 - Only Stage 6 (Retrospective) performs the merge. Pulling or rebasing the branch, as in the rule above, is a different operation that every stage still does.
-- In this documentation repository, non-documentation changes follow the same model: write to `main` only by merging a reviewed branch, not by committing directly. Documentation-only changes follow the Documentation-Only Changes exemption above and may be committed directly to `main`.
+- In this documentation repository, non-documentation changes follow the same model: write to `main` only by merging a reviewed branch, not by committing directly. Documentation-only changes — and maintenance scripts under `scripts/`, per the second exemption above — may be committed directly to `main` instead.
 
 ## Cross-References
 

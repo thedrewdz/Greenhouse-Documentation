@@ -14,7 +14,7 @@ All rules, precedence order, naming conventions, quality gates, and workflow gui
 This repository is the central documentation hub for the Greenhouse platform.
 It is primarily documentation. No production code lives here. It may also contain maintenance scripts (`scripts/`) that support the development workflow of the platform — see the Scope Boundaries section of `AGENTS.md`.
 
-Claude Code may write and edit documentation files in this repository.
+Claude Code may write and edit documentation files in this repository, and maintenance scripts under `scripts/`.
 Claude Code must not introduce a top-level `docs/` folder.
 All docs live at the repository root or in named subdirectories as defined by the existing structure.
 
