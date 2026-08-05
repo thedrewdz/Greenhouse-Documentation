@@ -180,6 +180,41 @@ while finding their unbolded twins. The pattern above tolerates emphasis because
 on to omit it, but do not depend on that tolerance: a query that misses a dependency reports "nothing is
 blocked" and is worse than no query at all.
 
+**`Blocked by:` is the label itself, not a description of one.** `Depends on:`, `Blocked on:`, `Waiting on:`,
+and `Requires:` all read identically to a human and match nothing. This is the dominant failure mode, not a
+hypothetical one. Swept 2026-08-05 across the five governed repositories, the canonical query above found
+**2** open items while **19** declared a dependency under a non-canonical label — including two real,
+resolvable, cross-repository edges it could not see:
+
+- `Greenhouse-Services#58` — `Depends on: Greenhouse-Documentation#60`
+- `Greenhouse-WebUI#3` — `Depends on: Greenhouse-Services#35`
+
+Services#58 is the entire failure in one item: it named a resolvable blocker in a form the query cannot
+read, and was unblocked only because one session happened to hold both halves in context — verbatim the
+failure Greenhouse-Documentation#55 was filed to eliminate, reproduced the day after this convention was
+written. Writing a convention down does not deploy it.
+
+The same sweep found nine `Greenhouse-Firmware` items (#4, #5, #6, #12–#17) whose declaration names a topic
+— `harness`, `device`, `WI-1` — rather than an issue that can close, which the *name the decision, not the
+topic* rule above already forbids.
+
+So sweep for non-canonical labels before trusting any "nothing is blocked" result:
+
+```powershell
+# Dependencies the canonical query is blind to. Reuses $repos and $label from above.
+$variant = '(?m)^\s*(?:[*_]{1,2})?(Depends on|Blocked on|Waiting on|Requires|Dependency|Prereq\w*)' +
+           '\s*:?(?:[*_]{1,2})?\s*\S+'
+foreach ($repo in $repos) {
+  $issues = gh issue list -R "thedrewdz/$repo" --state open --limit 300 `
+    --json number,title,body | ConvertFrom-Json
+  $issues | Where-Object { $_.body -match $variant -and $_.body -notmatch $label } |
+    ForEach-Object { "$repo#$($_.number)  $($_.title)" }
+}
+```
+
+Every hit is either a dependency the gate cannot see — rewrite it as `Blocked by:` with the reciprocal
+`Blocks:` on the other end — or a `Depends on: nothing.` that should simply omit the label.
+
 Raise `--limit` if a repository ever exceeds 300 open issues; `gh` truncates silently rather than warning.
 
 This exists because the relationship was previously prose. Four defects blocked on four decisions were promoted on 2026-08-04 only because one session closed the decisions and promoted the dependents in the same pass; the link lived nowhere but that session's comments. A promotion that works only when one actor holds both halves in context is not a process (Greenhouse-Documentation#55).
