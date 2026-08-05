@@ -18,7 +18,10 @@ This mirrors the [feature delivery harness](workflows/feature-delivery-harness.m
 
 Documentation-only changes are exempt from the branch + pull request + Code Review Gate requirement and may be committed directly to `main`.
 
+**This exemption applies to this documentation repository only.** Committing documentation files (such as `AGENTS.md` or `README.md`) directly to `main` inside a code repository (e.g. `Greenhouse-Services`) is not covered — those repositories require a pull request once branch protection is enabled, regardless of whether the changed files are Markdown. See [ADR-0005](adr/0005-ci-gate-policy.md) and the Merge Approval runbook in `workflows/feature-delivery-harness.md`.
+
 - A change is **documentation-only** when it touches *only* documentation files (Markdown and other non-executing doc assets) — no source, build, CI/workflow, dependency, or automation-config files.
+- **Maintenance scripts are a second, narrow exemption — not a redefinition of the rule above.** `scripts/*.ps1` and `scripts/*.sh` in this repository exist solely to support the development workflow of the platform, and are never deployed to or executed by any Greenhouse service. They are exempt on the same terms as documentation-only changes, and may be bundled with a documentation change without voiding that change's exemption. The definition above is unchanged: a source, build, CI/workflow, dependency, or automation-config file anywhere else in this repository still voids the exemption.
 - Such changes may be committed straight to `main` with a clear message; a branch, pull request, and review gate are not required.
 - This exemption does **not** apply when any of the following are true — use the standard branch + PR + review-gate flow instead:
   - the change is bundled with one or more non-documentation files (the whole change then follows the standard flow);

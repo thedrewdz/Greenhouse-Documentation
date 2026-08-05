@@ -10,7 +10,7 @@ This file is the canonical, neutral agent policy for this repository.
 
 ## Scope Boundaries
 
-- This repo is documentation-only.
+- This repo is primarily documentation. It may also contain maintenance scripts (`scripts/`) that support the development workflow of the platform but are not production code.
 - Prioritize clarity, consistency, and implementation-readiness in all docs.
 - Keep durable guidance in canonical docs, not session notes.
 - Do not couple repository policy to a single consumer implementation.

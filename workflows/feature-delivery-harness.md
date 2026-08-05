@@ -218,15 +218,38 @@ Only **Stage 6 (Retrospective)** merges a pull request to `main`. See [Pull Requ
 
 Required checks per governed repository:
 
-| Repository | Required checks | State |
-|---|---|---|
-| `Greenhouse-Documentation` | none — documentation-only changes are exempt from pull request entirely (see branching-strategy.md) | n/a |
-| `Greenhouse-Services` | `build-and-test` — `dotnet build` + `dotnet test` | present |
-| `Greenhouse-Firmware` | `standards-guard` | present |
-| `Greenhouse-WebUI` | `flutter analyze` + `flutter test` | **absent — tracked as Greenhouse-WebUI#24, must exist before the repo's first pull request** |
-| `Greenhouse-Peripherals` | sketch compilation | **absent — tracked as Greenhouse-Peripherals#2** |
+| Repository | Required check | Check exists | Enforced by branch protection |
+|---|---|---|---|
+| `Greenhouse-Documentation` | none — documentation-only changes are exempt from pull request entirely (see branching-strategy.md) | n/a | n/a |
+| `Greenhouse-Services` | `build-and-test` — `dotnet build` + `dotnet test` | yes | **no — script committed, awaiting maintainer run (Admin required)** |
+| `Greenhouse-Firmware` | `no-new-c-in-firmware`, `host-tests` | yes | **no — script committed, awaiting maintainer run (Admin required)** |
+| `Greenhouse-WebUI` | `flutter analyze` + `flutter test` — *commands, not yet job names; replace with the real context strings when #24 lands* | **no — tracked as Greenhouse-WebUI#24** | **no — protect after Greenhouse-WebUI#24 lands** |
+| `Greenhouse-Peripherals` | sketch compilation — *command, not yet a job name; replace with the real context string when #2 lands* | **no — deferred until the repository has a sketch (Greenhouse-Peripherals#2)** | **no — protect after Greenhouse-Peripherals#2 lands** |
 
 A repository whose required check is absent is **not exempt**; it is blocked from merging until the check exists. Do not work around a missing check by declaring the condition satisfied.
+
+The **Enforced** column reflects what `gh api repos/thedrewdz/<repo>/branches/main/protection` returns, not what is intended. When applying protection to a new repository, run:
+
+```powershell
+.\scripts\set-branch-protection.ps1 -Repo <RepoName> -Check <CheckName1>,<CheckName2>
+```
+
+> **`-Check` takes job names, not workflow names.** Branch protection matches check-run names (i.e. the `name:` field on the job, not the workflow). A context that never reports creates an unsatisfiable gate with no bypass, so confirm the exact strings before running.
+>
+> Where to read them from depends on the workflow's triggers:
+>
+> ```powershell
+> # Workflow has a `push: branches: [main]` trigger — main's head carries the check.
+> gh api repos/thedrewdz/<Repo>/commits/HEAD/check-runs --jq '.check_runs[].name'
+>
+> # Workflow is `pull_request`-only — main's head carries NO run. Read a recent PR head instead.
+> $sha = gh pr list --repo thedrewdz/<Repo> --state all --limit 1 --json headRefOid --jq '.[0].headRefOid'
+> gh api "repos/thedrewdz/<Repo>/commits/$sha/check-runs" --jq '.check_runs[].name'
+> ```
+>
+> `Greenhouse-Firmware` is the `pull_request`-only case: querying `main` there returns only `add-to-project` and none of the required contexts. Do not conclude from that the contexts are missing, and do not substitute the workflow name `standards-guard` — no check run uses it, so requiring it deadlocks `main`.
+
+**Consequence of enabling protection:** with the named check required and admin enforcement on, direct pushes to `main` in that repository stop working — including docs-only pushes. The documentation-only exemption in `branching-strategy.md` applies to this documentation repository only; it does not extend to documentation files inside a code repository. Greenhouse-Services#60 is the concrete case affected: an `AGENTS.md`/`README.md` edit that would have been a direct push is now a pull request. See [ADR-0005](../adr/0005-ci-gate-policy.md).
 
 ## Canonical Spec Status Lifecycle
 

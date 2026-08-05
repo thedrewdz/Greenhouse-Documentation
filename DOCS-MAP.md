@@ -92,6 +92,14 @@ Read [workflows/feature-delivery-harness.md](workflows/feature-delivery-harness.
 
 This workflow defines stage gates, loopbacks, artifact ownership, and the current manual stage-advancement expectation until orchestration exists.
 
+## Maintenance Scripts
+
+Read when running, modifying, or adding platform maintenance scripts:
+
+- [scripts/set-branch-protection.ps1](scripts/set-branch-protection.ps1): applies classic branch protection to a repository's `main` branch via `gh api`. See [ADR-0005](adr/0005-ci-gate-policy.md) and the Merge Approval runbook in [workflows/feature-delivery-harness.md](workflows/feature-delivery-harness.md).
+
+Scripts in this directory are maintenance tooling only. They are not production code and are not deployed to any Greenhouse service.
+
 ## Templates
 
 Read templates only when creating or validating the matching artifact:
