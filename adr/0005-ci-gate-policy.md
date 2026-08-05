@@ -21,7 +21,7 @@ A check that reports but is not required by branch protection does not gate a me
 
 ### 1. Required status checks are enforced by branch protection with no admin bypass
 
-Branch protection will be applied to `main` in every governed repository that has a live check. Configuration:
+Branch protection is applied to `main` in every governed repository that has a live check — Greenhouse-Services and Greenhouse-Firmware as of 2026-08-05. Configuration:
 
 - The named check or checks are the only required status check contexts. A repository may need more than one — `Greenhouse-Firmware` requires two, because its guard workflow reports as two separate jobs.
 - `strict: true` — the branch must be up to date before the check is treated as sufficient. This ensures the check ran against the actual merge result, not a stale head.

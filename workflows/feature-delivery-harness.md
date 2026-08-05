@@ -221,8 +221,8 @@ Required checks per governed repository:
 | Repository | Required check | Check exists | Enforced by branch protection |
 |---|---|---|---|
 | `Greenhouse-Documentation` | none — documentation-only changes are exempt from pull request entirely (see branching-strategy.md) | n/a | n/a |
-| `Greenhouse-Services` | `build-and-test` — `dotnet build` + `dotnet test` | yes | **no — script committed, awaiting maintainer run (Admin required)** |
-| `Greenhouse-Firmware` | `no-new-c-in-firmware`, `host-tests` | yes | **no — script committed, awaiting maintainer run (Admin required)** |
+| `Greenhouse-Services` | `build-and-test` — `dotnet build` + `dotnet test` | yes | yes — applied 2026-08-05, `strict: true`, admin bypass off |
+| `Greenhouse-Firmware` | `no-new-c-in-firmware`, `host-tests` | yes | yes — applied 2026-08-05, `strict: true`, admin bypass off |
 | `Greenhouse-WebUI` | `flutter analyze` + `flutter test` — *commands, not yet job names; replace with the real context strings when #24 lands* | **no — tracked as Greenhouse-WebUI#24** | **no — protect after Greenhouse-WebUI#24 lands** |
 | `Greenhouse-Peripherals` | sketch compilation — *command, not yet a job name; replace with the real context string when #2 lands* | **no — deferred until the repository has a sketch (Greenhouse-Peripherals#2)** | **no — protect after Greenhouse-Peripherals#2 lands** |
 
